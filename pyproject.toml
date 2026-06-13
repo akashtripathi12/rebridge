@@ -1,0 +1,14 @@
+# Root configuration for the ReBridge backend monorepo.
+#
+# Three independently-installable packages live here with a strict one-way
+# dependency direction:  rebridge_api -> rebridge_service -> rebridge_data
+#
+# boto3 is a dependency of rebridge_data ONLY.
+#
+# This root file is not an installable package. Use the shared test runner,
+# which executes each package's suite from inside that package's directory:
+#
+#     python run_tests.py            # all packages
+#     python run_tests.py service    # a single package
+#
+# Each package owns its own [tool.pytest.ini_options] in its pyproject.toml.

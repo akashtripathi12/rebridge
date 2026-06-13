@@ -1,0 +1,123 @@
+# PLACEHOLDER SEED DATA - ReBridge v1. category/grade/age -> recoverable price band (USD).
+# Values are synthetic (reference price x grade x age decay), NOT real market data. Override via config/injection.
+category,grade,age_bucket,price_low,price_high,price_point
+electronics,Like New,0-6,204.00,276.00,240.00
+electronics,Like New,7-12,173.40,234.60,204.00
+electronics,Like New,13-24,138.72,187.68,163.20
+electronics,Like New,25+,106.08,143.52,124.80
+electronics,Very Good,0-6,163.20,220.80,192.00
+electronics,Very Good,7-12,138.72,187.68,163.20
+electronics,Very Good,13-24,110.98,150.14,130.56
+electronics,Very Good,25+,84.86,114.82,99.84
+electronics,Good,0-6,122.40,165.60,144.00
+electronics,Good,7-12,104.04,140.76,122.40
+electronics,Good,13-24,83.23,112.61,97.92
+electronics,Good,25+,63.65,86.11,74.88
+electronics,Acceptable,0-6,77.52,104.88,91.20
+electronics,Acceptable,7-12,65.89,89.15,77.52
+electronics,Acceptable,13-24,52.72,71.32,62.02
+electronics,Acceptable,25+,40.31,54.53,47.42
+electronics,Unsellable,0-6,14.28,19.32,16.80
+electronics,Unsellable,7-12,12.14,16.42,14.28
+electronics,Unsellable,13-24,9.71,13.13,11.42
+electronics,Unsellable,25+,7.43,10.05,8.74
+apparel,Like New,0-6,46.75,63.25,55.00
+apparel,Like New,7-12,39.74,53.76,46.75
+apparel,Like New,13-24,31.79,43.01,37.40
+apparel,Like New,25+,24.31,32.89,28.60
+apparel,Very Good,0-6,37.40,50.60,44.00
+apparel,Very Good,7-12,31.79,43.01,37.40
+apparel,Very Good,13-24,25.43,34.41,29.92
+apparel,Very Good,25+,19.45,26.31,22.88
+apparel,Good,0-6,28.05,37.95,33.00
+apparel,Good,7-12,23.84,32.26,28.05
+apparel,Good,13-24,19.07,25.81,22.44
+apparel,Good,25+,14.59,19.73,17.16
+apparel,Acceptable,0-6,17.77,24.04,20.90
+apparel,Acceptable,7-12,15.10,20.44,17.77
+apparel,Acceptable,13-24,12.08,16.34,14.21
+apparel,Acceptable,25+,9.24,12.50,10.87
+apparel,Unsellable,0-6,3.27,4.43,3.85
+apparel,Unsellable,7-12,2.78,3.76,3.27
+apparel,Unsellable,13-24,2.23,3.01,2.62
+apparel,Unsellable,25+,1.70,2.30,2.00
+home,Like New,0-6,80.75,109.25,95.00
+home,Like New,7-12,68.64,92.86,80.75
+home,Like New,13-24,54.91,74.29,64.60
+home,Like New,25+,41.99,56.81,49.40
+home,Very Good,0-6,64.60,87.40,76.00
+home,Very Good,7-12,54.91,74.29,64.60
+home,Very Good,13-24,43.93,59.43,51.68
+home,Very Good,25+,33.59,45.45,39.52
+home,Good,0-6,48.45,65.55,57.00
+home,Good,7-12,41.18,55.72,48.45
+home,Good,13-24,32.95,44.57,38.76
+home,Good,25+,25.19,34.09,29.64
+home,Acceptable,0-6,30.69,41.52,36.10
+home,Acceptable,7-12,26.09,35.29,30.69
+home,Acceptable,13-24,20.87,28.23,24.55
+home,Acceptable,25+,15.95,21.59,18.77
+home,Unsellable,0-6,5.65,7.65,6.65
+home,Unsellable,7-12,4.80,6.50,5.65
+home,Unsellable,13-24,3.84,5.20,4.52
+home,Unsellable,25+,2.94,3.98,3.46
+toys,Like New,0-6,27.20,36.80,32.00
+toys,Like New,7-12,23.12,31.28,27.20
+toys,Like New,13-24,18.50,25.02,21.76
+toys,Like New,25+,14.14,19.14,16.64
+toys,Very Good,0-6,21.76,29.44,25.60
+toys,Very Good,7-12,18.50,25.02,21.76
+toys,Very Good,13-24,14.80,20.02,17.41
+toys,Very Good,25+,11.31,15.31,13.31
+toys,Good,0-6,16.32,22.08,19.20
+toys,Good,7-12,13.87,18.77,16.32
+toys,Good,13-24,11.10,15.02,13.06
+toys,Good,25+,8.48,11.48,9.98
+toys,Acceptable,0-6,10.34,13.98,12.16
+toys,Acceptable,7-12,8.79,11.89,10.34
+toys,Acceptable,13-24,7.03,9.51,8.27
+toys,Acceptable,25+,5.37,7.27,6.32
+toys,Unsellable,0-6,1.90,2.58,2.24
+toys,Unsellable,7-12,1.62,2.19,1.90
+toys,Unsellable,13-24,1.29,1.75,1.52
+toys,Unsellable,25+,0.99,1.33,1.16
+books,Like New,0-6,11.90,16.10,14.00
+books,Like New,7-12,10.12,13.69,11.90
+books,Like New,13-24,8.09,10.95,9.52
+books,Like New,25+,6.19,8.37,7.28
+books,Very Good,0-6,9.52,12.88,11.20
+books,Very Good,7-12,8.09,10.95,9.52
+books,Very Good,13-24,6.48,8.76,7.62
+books,Very Good,25+,4.95,6.69,5.82
+books,Good,0-6,7.14,9.66,8.40
+books,Good,7-12,6.07,8.21,7.14
+books,Good,13-24,4.85,6.57,5.71
+books,Good,25+,3.71,5.03,4.37
+books,Acceptable,0-6,4.52,6.12,5.32
+books,Acceptable,7-12,3.84,5.20,4.52
+books,Acceptable,13-24,3.08,4.16,3.62
+books,Acceptable,25+,2.35,3.19,2.77
+books,Unsellable,0-6,0.83,1.13,0.98
+books,Unsellable,7-12,0.71,0.95,0.83
+books,Unsellable,13-24,0.57,0.77,0.67
+books,Unsellable,25+,0.43,0.59,0.51
+general,Like New,0-6,51.00,69.00,60.00
+general,Like New,7-12,43.35,58.65,51.00
+general,Like New,13-24,34.68,46.92,40.80
+general,Like New,25+,26.52,35.88,31.20
+general,Very Good,0-6,40.80,55.20,48.00
+general,Very Good,7-12,34.68,46.92,40.80
+general,Very Good,13-24,27.74,37.54,32.64
+general,Very Good,25+,21.22,28.70,24.96
+general,Good,0-6,30.60,41.40,36.00
+general,Good,7-12,26.01,35.19,30.60
+general,Good,13-24,20.81,28.15,24.48
+general,Good,25+,15.91,21.53,18.72
+general,Acceptable,0-6,19.38,26.22,22.80
+general,Acceptable,7-12,16.47,22.29,19.38
+general,Acceptable,13-24,13.18,17.83,15.50
+general,Acceptable,25+,10.08,13.64,11.86
+general,Unsellable,0-6,3.57,4.83,4.20
+general,Unsellable,7-12,3.03,4.11,3.57
+general,Unsellable,13-24,2.43,3.29,2.86
+general,Unsellable,25+,1.85,2.51,2.18
