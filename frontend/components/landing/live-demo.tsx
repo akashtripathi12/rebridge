@@ -102,18 +102,13 @@ export function LiveDemo() {
       data-testid="live-demo"
       className="bg-canvas px-4 py-20 sm:px-6 sm:py-28"
     >
-      <div className="mx-auto max-w-[1080px]">
+      <div className="mx-auto max-w-[1200px]">
         <div className="font-sans text-[12px] font-bold uppercase tracking-[0.2em] text-amber-deep">
           See it live
         </div>
         <h2 className="mt-3 max-w-[20ch] font-display text-[clamp(28px,5vw,52px)] font-extrabold uppercase leading-[1] tracking-[-0.02em]">
-          One ₹3 inspection. One verdict. One receipt.
+          One inspection. One verdict. One receipt.
         </h2>
-        <p className="mt-4 max-w-[58ch] text-[15px] leading-relaxed text-ash">
-          Scroll this into view. The amber scan is the inspection. The pins are
-          what the model saw. The receipt is the routing decision the operator
-          accepts — or sends to the review queue.
-        </p>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,520px)_1fr] lg:gap-10">
           <DarkStage ghost="RB" className="relative aspect-[5/4] w-full">

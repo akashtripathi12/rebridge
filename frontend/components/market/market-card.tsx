@@ -28,10 +28,10 @@ export function MarketCard({ item }: { item: MarketplaceItem }) {
       data-item={item.item_id}
       className="group overflow-hidden rounded-[14px] border border-hair-soft bg-pearl shadow-sm transition-transform hover:-translate-y-0.5"
     >
-      <div className="grid h-[88px] place-items-center bg-[radial-gradient(130%_120%_at_40%_10%,#26262a,#141416)]">
+      <div className="grid h-[88px] place-items-center overflow-hidden bg-black">
         <ProductGlyph
           kind={item.thumb_key}
-          className="w-[58%] drop-shadow-[0_8px_10px_rgba(0,0,0,0.5)]"
+          className="w-[58%]"
         />
       </div>
       <div className="p-3">
@@ -53,15 +53,6 @@ export function MarketCard({ item }: { item: MarketplaceItem }) {
             </span>
           ) : null}
         </div>
-        {top ? (
-          <div
-            data-testid="market-intent"
-            className="mt-2 inline-flex items-center gap-1.5 rounded-pill bg-[#E7F4EC] px-2.5 py-1 text-[10px] font-bold text-trust"
-          >
-            <span className="text-[7px] leading-none">●</span>
-            {top.match_reasons[0]}
-          </div>
-        ) : null}
       </div>
     </Link>
   );

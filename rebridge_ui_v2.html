@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ReBridge — UI v2 (Premium Retail)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Archivo:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Warm premium retail: Nike editorial discipline + Apple pearl warmth */
+  --ink:#111111; --charcoal:#39393b; --ash:#4b4b4d; --mute:#707072; --stone:#9e9ea0;
+  --hair:#e5e5e5; --hair-soft:#efeae4;
+  --canvas:#F4F1EC;          /* warm parchment, not cold grey */
+  --paper:#FBFAF7;           /* card */
+  --pearl:#FEFDFB;
+  --amber:#FF9900; --amber-deep:#D97A00;   /* PRICE + ACTION only */
+  --trust:#007D48; --trust-bright:#1EAA52;
+  --sale:#D30005;
+  --ink-on-dark:#F4F1EC;
+  --disp:'Archivo',sans-serif;       /* towering display */
+  --ui:'Manrope',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --sh-sm:0 1px 2px rgba(17,17,17,.04), 0 2px 8px rgba(17,17,17,.04);
+  --sh-md:0 8px 24px rgba(17,17,17,.08), 0 2px 6px rgba(17,17,17,.05);
+  --sh-lg:0 30px 60px rgba(17,17,17,.16);
+  --r:18px; --r-pill:999px;
+  --e-pop:cubic-bezier(.2,1.3,.35,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ui);background:
+   radial-gradient(120% 80% at 50% -10%, #FBF8F2 0%, var(--canvas) 55%);
+   color:var(--ink);min-height:100vh;padding:30px 18px 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto}
+.kick{font:700 12px var(--ui);letter-spacing:.2em;color:var(--amber-deep);text-transform:uppercase}
+h1.page{font:800 clamp(30px,5vw,52px)/1 var(--disp);letter-spacing:-.02em;margin:10px 0 8px;text-transform:uppercase}
+.sub{color:var(--ash);font-size:14.5px;line-height:1.6;max-width:60ch}
+.toolbar{display:flex;gap:10px;align-items:center;margin:20px 0 26px;flex-wrap:wrap}
+.btn-replay{font:700 13px var(--ui);background:var(--ink);color:#fff;border:0;border-radius:var(--r-pill);padding:12px 22px;cursor:pointer;transition:transform .15s}
+.btn-replay:hover{transform:translateY(-2px)}
+.hint{font-size:12px;color:var(--mute)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-left:auto;font:600 11px var(--mono);color:var(--mute)}
+.legend i{width:12px;height:12px;border-radius:4px;display:inline-block;vertical-align:-1px;margin-right:5px}
+
+.stage{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:30px;align-items:start}
+
+/* ---------- device ---------- */
+.phone{background:#fff;border-radius:42px;padding:7px;box-shadow:var(--sh-lg);max-width:362px;margin:0 auto;width:100%;border:1px solid #ececec}
+.screen{background:var(--canvas);border-radius:36px;overflow:hidden;display:flex;flex-direction:column;min-height:660px;position:relative}
+.sb{display:flex;justify-content:space-between;font:600 11px var(--ui);padding:12px 22px 6px;color:var(--ink)}
+.nav{display:flex;align-items:center;gap:10px;padding:6px 18px 12px}
+.brandmark{font:800 15px var(--disp);letter-spacing:-.01em;text-transform:uppercase}
+.brandmark span{color:var(--amber-deep)}
+.nav .where{margin-left:auto;font:600 11px var(--ui);color:var(--mute);background:var(--paper);border:1px solid var(--hair);border-radius:var(--r-pill);padding:6px 12px}
+
+/* editorial product hero (Nike: photography-first) */
+.hero-shot{position:relative;margin:6px 14px 0;border-radius:26px;overflow:hidden;height:240px;
+  background:
+   radial-gradient(140% 120% at 30% 10%, #2a2a2e 0%, #161618 60%, #0e0e10 100%);
+  display:flex;align-items:center;justify-content:center}
+.hero-shot .huge{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font:900 150px/1 var(--disp);letter-spacing:-.04em;color:rgba(255,255,255,.05);text-transform:uppercase;pointer-events:none}
+.hero-shot svg{position:relative;width:78%;height:78%;filter:drop-shadow(0 24px 30px rgba(0,0,0,.5))}
+.scan{position:absolute;left:0;right:0;height:54px;top:-60px;
+  background:linear-gradient(180deg,transparent,rgba(255,153,0,.20),transparent);
+  border-top:2px solid rgba(255,153,0,.9);box-shadow:0 0 30px 6px rgba(255,153,0,.35);opacity:0}
+.scanning .scan{opacity:1;animation:scan 1.2s linear infinite}
+@keyframes scan{from{top:-60px}to{top:240px}}
+.pin{position:absolute;display:flex;align-items:center;gap:7px;opacity:0;transform:scale(.5)}
+.pin.show{opacity:1;transform:scale(1);transition:all .4s var(--e-pop)}
+.pin .dot{width:24px;height:24px;border-radius:50%;background:#fff;color:var(--ink);font:700 11px var(--mono);display:grid;place-items:center;box-shadow:0 0 0 4px rgba(255,255,255,.25), var(--sh-md)}
+.pin .tag{font:600 10.5px var(--ui);background:rgba(255,255,255,.96);color:var(--ink);border-radius:7px;padding:5px 9px;white-space:nowrap;box-shadow:var(--sh-md)}
+.gradeTag{position:absolute;top:16px;left:16px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.96);border-radius:var(--r-pill);padding:7px 14px 7px 8px;opacity:0;transform:translateY(-8px);box-shadow:var(--sh-md)}
+.gradeTag.show{opacity:1;transform:none;transition:all .45s var(--e-pop)}
+.gradeTag b{font:800 13px var(--disp);letter-spacing:.04em;background:var(--ink);color:#fff;border-radius:var(--r-pill);padding:4px 11px;text-transform:uppercase}
+.gradeTag em{font:600 11px var(--ui);font-style:normal;color:var(--ash)}
+
+.statusline{display:flex;align-items:center;gap:9px;padding:14px 22px 2px;min-height:26px}
+.dotpulse{width:7px;height:7px;border-radius:50%;background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.statusline span{font:500 13px var(--ui);color:var(--ash)}
+.statusline.done .dotpulse{background:var(--trust);animation:none}
+.statusline.done span{color:var(--trust);font-weight:600}
+
+/* receipt — editorial, warm */
+.receipt{margin:8px 16px;background:var(--paper);border:1px solid var(--hair);border-radius:16px;padding:14px 16px}
+.receipt .h{font:700 10px var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--stone);margin-bottom:8px}
+.receipt .row{display:flex;justify-content:space-between;font:500 13px var(--mono);padding:3px 0;opacity:0;transform:translateY(3px)}
+.receipt .row.show{opacity:1;transform:none;transition:all .3s ease}
+.receipt .row.mut{color:var(--mute)}
+.receipt .rule{border-top:1px dashed var(--hair);margin:7px 0;opacity:0}.receipt .rule.show{opacity:1}
+.receipt .row.tot b{color:var(--trust);font-weight:600}
+.receipt .row.route{font-weight:600;color:var(--ink)}
+.receipt .row.route b{color:var(--amber-deep)}
+
+.cta{margin:auto 16px 18px;border:0;border-radius:var(--r-pill);padding:16px;font:700 15px var(--ui);
+  background:var(--hair);color:var(--stone);transition:all .35s;letter-spacing:.01em}
+.cta.on{background:var(--ink);color:#fff;cursor:pointer;box-shadow:var(--sh-md)}
+.cta.on:hover{transform:translateY(-2px)}
+.price-amber{color:var(--amber-deep)}
+
+/* ---------- health card (boarding-pass, warm) ---------- */
+.scrollpad{padding:14px 16px 18px;display:flex;flex-direction:column;gap:13px;flex:1}
+.hcard{background:var(--pearl);border-radius:20px;box-shadow:var(--sh-md);overflow:hidden;border:1px solid var(--hair-soft)}
+.hcard .topband{height:130px;position:relative;background:radial-gradient(130% 120% at 70% 0%, #2b2b2f, #131315);display:flex;align-items:center;justify-content:center}
+.hcard .topband svg{width:62%;filter:drop-shadow(0 14px 18px rgba(0,0,0,.5))}
+.hcard .topband .wm{position:absolute;left:14px;bottom:10px;font:800 11px var(--disp);letter-spacing:.12em;color:rgba(255,255,255,.5);text-transform:uppercase}
+.hcard .perf{height:0;border-bottom:2px dashed var(--hair);position:relative}
+.hcard .perf::before,.hcard .perf::after{content:"";position:absolute;top:-9px;width:18px;height:18px;border-radius:50%;background:var(--canvas)}
+.hcard .perf::before{left:-9px}.hcard .perf::after{right:-9px}
+.hcard .body{padding:14px 18px 4px}
+.hcard .ey{display:flex;justify-content:space-between;align-items:center}
+.hcard .ey .lab{font:700 10px var(--ui);letter-spacing:.16em;color:var(--stone);text-transform:uppercase}
+.verified{display:flex;gap:6px;align-items:center;font:700 11px var(--ui);color:var(--trust)}
+.verified .t{width:16px;height:16px;border-radius:50%;background:var(--trust);color:#fff;display:grid;place-items:center;font-size:9px}
+.hcard h3{font:800 19px var(--disp);letter-spacing:-.01em;margin:6px 0 2px;text-transform:uppercase}
+.hcard .meta{font:500 11.5px var(--mono);color:var(--mute);margin-bottom:10px}
+.gradestrip{display:flex;align-items:center;gap:10px;padding:11px 18px;border-top:1px solid var(--hair-soft);border-bottom:1px solid var(--hair-soft);background:var(--paper)}
+.gradestrip .g{font:800 14px var(--disp);letter-spacing:.04em;background:var(--ink);color:#fff;border-radius:8px;padding:6px 13px;text-transform:uppercase}
+.gradestrip .c{font:600 12px var(--ui);color:var(--ash)}.gradestrip .c b{font-family:var(--mono);color:var(--ink)}
+.findings{padding:12px 18px;display:grid;gap:8px}
+.findings .f{display:flex;gap:9px;font:500 12.5px var(--ui);line-height:1.4}
+.findings .f i{flex:0 0 7px;height:7px;border-radius:50%;margin-top:5px}
+.f.bad i{background:var(--sale)}.f.ok i{background:var(--trust)}.f.warn i{background:var(--amber-deep)}
+.hcfoot{display:flex;gap:13px;padding:12px 18px 16px;align-items:center;border-top:1px dashed var(--hair)}
+.qr{flex:0 0 72px}
+.hcfoot .sig{font:500 11px var(--ui);color:var(--mute);line-height:1.55}
+.hcfoot .sig b{display:block;font:600 12px var(--mono);color:var(--ink);margin-bottom:1px}
+.pricebox{display:flex;justify-content:space-between;align-items:flex-end;background:var(--pearl);border:1px solid var(--hair);border-radius:16px;padding:14px 18px}
+.pricebox .now{font:800 26px var(--disp);letter-spacing:-.01em}
+.pricebox .now b{color:var(--amber-deep)}
+.pricebox .save{font:600 11.5px var(--ui);color:var(--trust);text-align:right}
+.pricebox .save s{color:var(--stone);display:block;font-weight:500}
+.buy{border:0;border-radius:var(--r-pill);padding:15px;font:700 14.5px var(--ui);background:var(--ink);color:#fff;cursor:pointer;box-shadow:var(--sh-md);transition:transform .15s}
+.buy:hover{transform:translateY(-2px)}
+.guarantee{text-align:center;font:500 11px var(--ui);color:var(--mute)}
+.loop{margin-top:auto;background:linear-gradient(110deg,#15301f,#0d2417);border-radius:16px;padding:14px 16px;display:flex;gap:11px;align-items:center;box-shadow:var(--sh-md)}
+.loop .leaf{font-size:20px}
+.loop p{font:500 12.5px var(--ui);color:#d8 efe0;color:#D9F0E1;line-height:1.45}
+.loop p b{color:#fff}
+
+/* principle footer */
+.principles{margin-top:38px;background:var(--ink);border-radius:24px;padding:26px;color:var(--ink-on-dark);position:relative;overflow:hidden}
+.principles .ghost{position:absolute;right:-20px;top:-30px;font:900 180px var(--disp);color:rgba(255,255,255,.03);text-transform:uppercase;letter-spacing:-.05em}
+.principles h2{font:800 14px var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:16px;position:relative}
+.pg{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px;position:relative}
+.pg .p b{display:block;font:700 14px var(--ui);margin-bottom:5px}
+.pg .p span{font-size:12px;color:#b9b6b0;line-height:1.55}
+.sws{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;position:relative}
+.sw{display:flex;align-items:center;gap:7px;font:600 11px var(--mono);color:#b9b6b0}
+.sw i{width:16px;height:16px;border-radius:5px;border:1px solid rgba(255,255,255,.18)}
+@media (prefers-reduced-motion:reduce){.scanning .scan{animation:none;opacity:0}.pin,.gradeTag,.receipt .row,.receipt .rule{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">ReBridge · UI v2 · Premium Retail</div>
+  <h1 class="page">Built like a flagship</h1>
+  <p class="sub">Restyled toward warm premium retail — Nike's photography-first editorial discipline (near-monochrome chrome, towering display type, colour reserved for price signal) fused with Apple's warm pearl surfaces. Same two hero screens, completely new skin. Dark editorial product stage, warm parchment canvas, amber only on price and action.</p>
+  <div class="toolbar">
+    <button class="btn-replay" id="replay">▶ Replay the grading reveal</button>
+    <span class="hint">auto-plays · respects reduced-motion</span>
+    <span class="legend"><span><i style="background:#FF9900"></i>price/action</span><span><i style="background:#007D48"></i>trust</span><span><i style="background:#111"></i>chrome</span></span>
+  </div>
+
+  <div class="stage">
+    <!-- ===== PHONE 1: GRADING REVEAL ===== -->
+    <div class="phone"><div class="screen" id="p1">
+      <div class="sb"><span>9:41</span><span>􀙇 􀛨 􀋦</span></div>
+      <div class="nav"><div class="brandmark">RE<span>BRIDGE</span></div><div class="where">Returns · Hub BLR-4</div></div>
+
+      <div class="hero-shot" id="shot">
+        <div class="huge">RB</div>
+        <svg viewBox="0 0 340 220" aria-label="Returned sneaker">
+          <ellipse cx="170" cy="192" rx="120" ry="9" fill="rgba(0,0,0,.45)"/>
+          <path d="M40 170 Q44 192 72 192 L286 192 Q308 192 306 172 L302 160 L44 160 Z" fill="#e9e9ec"/>
+          <path d="M40 170 Q44 192 72 192 L286 192 Q308 192 306 172" fill="none" stroke="#cfcfd4" stroke-width="2"/>
+          <path d="M46 162 C50 120 80 96 124 92 C152 90 164 78 180 64 C198 49 222 46 240 58 C248 64 252 74 258 88 C270 116 294 130 300 160 Z" fill="#fbfbfc" stroke="#dadade" stroke-width="1.5"/>
+          <path d="M46 162 C49 130 72 104 110 96 C94 120 80 142 74 162 Z" fill="#eef0f2"/>
+          <path d="M150 96 L198 76 M158 108 L208 86 M166 120 L216 98 M174 132 L224 110" stroke="#b9bcc4" stroke-width="4" stroke-linecap="round"/>
+          <path d="M96 152 C150 144 222 122 270 96 C264 116 252 134 232 144 C192 158 130 160 96 152 Z" fill="#FF9900"/>
+          <path d="M58 140 l14 -6 M54 148 l18 -7 M60 154 l12 -5" stroke="#9c6a4f" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>
+        </svg>
+        <div class="scan"></div>
+        <div class="pin" id="pin1" style="left:30px;top:112px"><div class="dot">1</div><div class="tag">Scuff · left toe</div></div>
+        <div class="pin" id="pin2" style="left:198px;top:170px"><div class="dot">2</div><div class="tag">Sole wear · light</div></div>
+        <div class="gradeTag" id="gradeTag"><b>Good</b><em>91% confidence</em></div>
+      </div>
+
+      <div class="statusline" id="status"><div class="dotpulse"></div><span id="statusTxt">Matching against original listing…</span></div>
+
+      <div class="receipt" id="receipt">
+        <div class="h">Disposition economics</div>
+        <div class="row" data-s><span>Resale value · Good</span><span>₹340</span></div>
+        <div class="row mut" data-s><span>AI grade ₹3 + pickup ₹107</span><span>−₹110</span></div>
+        <div class="rule" data-s></div>
+        <div class="row tot" data-s><span>Margin</span><b>+₹230</b></div>
+        <div class="row mut" data-s><span>vs liquidation</span><span>−₹15</span></div>
+        <div class="row route" data-s><span>Route</span><b>P2P · 3 buyers &lt; 5 km</b></div>
+      </div>
+
+      <button class="cta" id="cta">List for <span class="price-amber">&nbsp;₹340</span></button>
+    </div></div>
+
+    <!-- ===== PHONE 2: HEALTH CARD ===== -->
+    <div class="phone"><div class="screen">
+      <div class="sb"><span>9:42</span><span>􀙇 􀛨 􀋦</span></div>
+      <div class="nav"><div class="brandmark">RE<span>BRIDGE</span></div><div class="where">Second Chance · 4 km</div></div>
+      <div class="scrollpad">
+        <div class="hcard">
+          <div class="topband">
+            <svg viewBox="0 0 200 110" aria-label="Graded sneaker">
+              <ellipse cx="100" cy="96" rx="74" ry="6" fill="rgba(0,0,0,.4)"/>
+              <path d="M26 84 Q29 98 46 98 L172 98 Q186 98 185 86 L182 78 L28 78 Z" fill="#e9e9ec"/>
+              <path d="M30 80 C33 56 50 40 76 38 C93 36 102 28 112 20 C124 11 138 9 150 17 C156 22 159 29 163 38 C171 56 186 64 189 80 Z" fill="#fbfbfc"/>
+              <path d="M60 74 C92 69 134 56 162 38 C158 50 150 60 138 66 C114 76 80 78 60 74 Z" fill="#FF9900"/>
+            </svg>
+            <span class="wm">REBRIDGE · VERIFIED</span>
+          </div>
+          <div class="perf"></div>
+          <div class="body">
+            <div class="ey"><span class="lab">Product Health Card</span><span class="verified"><span class="t">✓</span>12 Jun</span></div>
+            <h3>Running Shoes · UK 7</h3>
+            <div class="meta">RB-7F3A-91 · graded by ReBridge AI</div>
+          </div>
+          <div class="gradestrip"><span class="g">Good</span><span class="c">Confidence <b>91%</b> · human-spot-checked</span></div>
+          <div class="findings">
+            <div class="f bad"><i></i><span><b>Minor scuff</b>, left toe — cosmetic only.</span></div>
+            <div class="f warn"><i></i><span><b>Light sole wear</b> — ~80% tread life left.</span></div>
+            <div class="f ok"><i></i><span><b>Matches original listing</b> — same item verified.</span></div>
+            <div class="f warn"><i></i><span><b>Box missing</b> — ships in ReBridge packaging.</span></div>
+          </div>
+          <div class="hcfoot">
+            <svg class="qr" viewBox="0 0 29 29" aria-label="Verify QR"><rect width="29" height="29" fill="#fff"/><g fill="#111">
+              <path d="M0 0h7v7H0zM2 2h3v3H2zM22 0h7v7h-7zM24 2h3v3h-3zM0 22h7v7H0zM2 24h3v3H2z"/>
+              <rect x="9" y="1" width="2" height="2"/><rect x="13" y="0" width="2" height="2"/><rect x="17" y="2" width="2" height="2"/><rect x="11" y="4" width="2" height="2"/><rect x="15" y="5" width="2" height="2"/>
+              <rect x="1" y="10" width="2" height="2"/><rect x="4" y="13" width="2" height="2"/><rect x="0" y="16" width="2" height="2"/><rect x="3" y="18" width="2" height="2"/>
+              <rect x="9" y="9" width="3" height="3"/><rect x="14" y="10" width="2" height="2"/><rect x="18" y="9" width="2" height="2"/><rect x="22" y="11" width="2" height="2"/><rect x="26" y="9" width="2" height="2"/>
+              <rect x="10" y="14" width="2" height="2"/><rect x="13" y="16" width="3" height="2"/><rect x="18" y="14" width="2" height="3"/><rect x="24" y="15" width="2" height="2"/>
+              <rect x="9" y="19" width="2" height="2"/><rect x="12" y="21" width="2" height="2"/><rect x="16" y="20" width="2" height="2"/><rect x="21" y="19" width="3" height="2"/><rect x="26" y="21" width="2" height="2"/>
+              <rect x="10" y="24" width="2" height="2"/><rect x="14" y="26" width="2" height="2"/><rect x="18" y="24" width="3" height="2"/><rect x="23" y="25" width="2" height="2"/></g></svg>
+            <div class="sig"><b>Tap to verify signature</b>HMAC-signed, tamper-evident. Anyone can check — no account needed.</div>
+          </div>
+        </div>
+
+        <div class="pricebox">
+          <div class="now"><b>₹340</b></div>
+          <div class="save">save 32%<s>₹500 new</s></div>
+        </div>
+        <button class="buy">Buy with ReBridge protection</button>
+        <div class="guarantee">A-to-z guarantee · standard returns apply</div>
+
+        <div class="loop"><span class="leaf">🌱</span><p><b>Priya —</b> your returned shoes found a new owner 4 km away.</p></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="principles">
+    <div class="ghost">RE</div>
+    <h2>What changed & why</h2>
+    <div class="pg">
+      <div class="p"><b>Photography-first stage</b><span>The product now sits on a dark editorial stage with a giant ghost wordmark behind it — Nike's retail energy. The item is the hero, not a form field.</span></div>
+      <div class="p"><b>Display type with attitude</b><span>Archivo black, uppercase, tight tracking for grades & headlines. Extreme contrast against quiet Manrope body — premium, not plain.</span></div>
+      <div class="p"><b>Warm, not cold</b><span>Parchment canvas + pearl cards replace clinical grey. Chrome is near-monochrome; the only colour is amber on price and green on trust.</span></div>
+      <div class="p"><b>Chrome goes black</b><span>Primary action is now confident black (Nike CTA), amber reserved purely for the price number — so the rupee figure is the brightest thing on screen.</span></div>
+    </div>
+    <div class="sws">
+      <span class="sw"><i style="background:#111"></i>#111 ink/chrome</span>
+      <span class="sw"><i style="background:#F4F1EC"></i>#F4F1EC parchment</span>
+      <span class="sw"><i style="background:#FBFAF7"></i>#FBFAF7 pearl</span>
+      <span class="sw"><i style="background:#FF9900"></i>#FF9900 price/action</span>
+      <span class="sw"><i style="background:#007D48"></i>#007D48 trust</span>
+      <span class="sw"><i style="background:#fff;border-color:#888"></i>Archivo + Manrope + JetBrains Mono</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const p1=document.getElementById('p1'),shot=document.getElementById('shot');
+  const status=document.getElementById('status'),sTxt=document.getElementById('statusTxt');
+  const pin1=document.getElementById('pin1'),pin2=document.getElementById('pin2'),gt=document.getElementById('gradeTag');
+  const rows=[...document.querySelectorAll('#receipt [data-s]')],cta=document.getElementById('cta');
+  const stages=['Matching against original listing…','Inspecting upper & soles…','Checking completeness…'];
+  let T=[];
+  const at=(fn,ms)=>T.push(setTimeout(fn,reduced?0:ms));
+  function reset(){T.forEach(clearTimeout);T=[];shot.classList.add('scanning');status.classList.remove('done');
+    sTxt.textContent=stages[0];[pin1,pin2,gt].forEach(e=>e.classList.remove('show'));rows.forEach(e=>e.classList.remove('show'));cta.classList.remove('on');}
+  function play(){reset();
+    at(()=>sTxt.textContent=stages[1],950);
+    at(()=>sTxt.textContent=stages[2],1850);
+    at(()=>{shot.classList.remove('scanning');pin1.classList.add('show');},2550);
+    at(()=>pin2.classList.add('show'),2900);
+    at(()=>{gt.classList.add('show');status.classList.add('done');sTxt.textContent='Graded Good · matches original listing';},3300);
+    rows.forEach((r,i)=>at(()=>r.classList.add('show'),3900+i*230));
+    at(()=>cta.classList.add('on'),3900+rows.length*230+200);
+  }
+  document.getElementById('replay').addEventListener('click',play);play();
+})();
+</script>
+</body>
+</html>

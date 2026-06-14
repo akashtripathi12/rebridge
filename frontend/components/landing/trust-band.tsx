@@ -15,15 +15,15 @@ export function TrustBand() {
   return (
     <section
       data-testid="trust-band"
-      className="bg-[radial-gradient(120%_80%_at_50%_0%,#fbf8f2,#f4f1ec_55%)] px-4 py-20 sm:px-6 sm:py-24"
+      className="bg-canvas px-4 py-20 sm:px-6 sm:py-24"
     >
-      <div className="mx-auto grid max-w-[1080px] gap-10 lg:grid-cols-2 lg:items-center">
+      <div className="mx-auto grid max-w-[1200px] gap-10 lg:grid-cols-2 lg:items-center">
         <div>
           <div className="font-sans text-[12px] font-bold uppercase tracking-[0.2em] text-amber-deep">
             Trust
           </div>
           <h2 className="mt-3 max-w-[18ch] font-display text-[clamp(28px,5vw,52px)] font-extrabold uppercase leading-[1] tracking-[-0.02em]">
-            Every item ships with a verifiable Health Card.
+            Every item ships verified.
           </h2>
           <p className="mt-4 max-w-[54ch] text-[15px] leading-relaxed text-ash">
             HMAC-signed, QR-scannable. The grade, the defects, the inspection
@@ -48,7 +48,8 @@ export function TrustBand() {
             <li className="flex gap-2">
               <ShieldCheck className="mt-0.5 h-4 w-4 flex-none text-trust" />{" "}
               <span>
-                <b>A-to-z guarantee.</b> Standard returns apply on every purchase.
+                <b>Returns honoured.</b> Returns policy of the originating
+                retailer applies.
               </span>
             </li>
           </ul>
@@ -56,11 +57,6 @@ export function TrustBand() {
             <Link href="/market">
               <Button variant="primary" size="md">
                 Browse verified items
-              </Button>
-            </Link>
-            <Link href="/review">
-              <Button variant="secondary" size="md">
-                See the review console
               </Button>
             </Link>
           </div>

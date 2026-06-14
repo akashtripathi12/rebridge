@@ -1,9 +1,11 @@
 /**
- * ProductGlyph — the SVG product stand-ins lifted from the v2 design files.
- * Used wherever a real photo / GLB isn't present (marketplace thumbs, decision
- * cards, the reveal stage fallback). Keyed by a simple `kind` string that maps
- * to seed `thumb_key` values.
+ * ProductGlyph — product visual for a given `kind`. Prefers a real photo from
+ * /public/products/<kind>.png (Higgsfield-generated editorial product shots on a
+ * dark studio backdrop). Falls back to the v2 SVG stand-ins for unknown kinds.
  */
+
+const REAL_PHOTO_KINDS = new Set(["shoe", "monitor", "earbuds", "books"]);
+
 export function ProductGlyph({
   kind,
   className,
@@ -11,6 +13,20 @@ export function ProductGlyph({
   kind: string;
   className?: string;
 }) {
+  if (REAL_PHOTO_KINDS.has(kind)) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`/products/${kind}.png`}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        decoding="async"
+        className={className}
+      />
+    );
+  }
+
   switch (kind) {
     case "monitor":
       return (

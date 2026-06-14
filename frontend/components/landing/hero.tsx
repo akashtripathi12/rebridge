@@ -59,13 +59,10 @@ export function Hero() {
 
       <div className="relative mx-auto grid max-w-[1200px] items-center gap-10 pb-20 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pb-28">
         <div>
-          <div className="font-mono text-[12px] font-bold uppercase tracking-[0.24em] text-amber-deep">
-            ReBridge · HackOn with Amazon S6
-          </div>
           <h1
             ref={headlineRef}
             data-testid="hero-headline"
-            className="mt-5 max-w-[14ch] font-display text-[clamp(46px,9vw,108px)] font-black uppercase leading-[0.92] tracking-[-0.035em]"
+            className="max-w-[14ch] font-display text-[clamp(46px,9vw,108px)] font-black uppercase leading-[0.92] tracking-[-0.035em]"
           >
             {LINES.map((line, i) => (
               <span key={i} data-line className="block overflow-hidden">
@@ -83,9 +80,10 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 max-w-[54ch] text-[16px] leading-relaxed text-ash">
-            Photograph any returned, unused, or outgrown product. Our AI grades it
-            for ₹3, prints a verifiable Health Card, and routes it to the right
-            next owner — resale, refurb, peer-to-peer, or donation — in seconds.
+            Photograph a returned, unused, or outgrown product. Our vision AI
+            grades it in seconds, prints a verifiable Health Card, and a
+            unit-economics router sends it onward — resale, refurb,
+            peer-to-peer, or donation.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -137,7 +135,7 @@ export function Hero() {
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
             <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-amber/90">
               <span className="h-1.5 w-1.5 animate-pulse2 rounded-full bg-amber" />
-              ₹3 inspection · in progress
+              Inspection · in progress
             </div>
           </div>
         </div>

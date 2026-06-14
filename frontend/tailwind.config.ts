@@ -51,7 +51,7 @@ const config: Config = {
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "stage-dark":
-          "radial-gradient(140% 120% at 30% 8%, #2a2a2e, #161618 60%, #0e0e10)",
+          "linear-gradient(180deg, #000000, #000000)",
         "canvas-warm":
           "radial-gradient(120% 80% at 50% -10%, #FBF8F2 0%, #F4F1EC 55%)",
       },

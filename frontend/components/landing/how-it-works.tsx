@@ -14,7 +14,7 @@ const STEPS: { Icon: React.ComponentType<{ className?: string }>; title: string;
   },
   {
     Icon: ScanLine,
-    title: "AI grades it for ₹3",
+    title: "AI grades it in seconds",
     body: "A vision-model cascade inspects the item — Like New through Unsellable — in seconds.",
   },
   {
@@ -30,7 +30,7 @@ const STEPS: { Icon: React.ComponentType<{ className?: string }>; title: string;
   {
     Icon: Sprout,
     title: "Second life, not warehouse round-trip",
-    body: "On average a 4 km handoff instead of 600 km of reverse logistics.",
+    body: "A neighbourhood handoff instead of a 600 km warehouse round-trip.",
   },
 ];
 
@@ -104,19 +104,22 @@ export function HowItWorks() {
       data-testid="how-it-works"
       className="scroll-mt-16 bg-canvas px-4 py-20 sm:px-6 sm:py-28"
     >
-      <div className="mx-auto max-w-[1080px]">
-        <div className="font-sans text-[12px] font-bold uppercase tracking-[0.2em] text-amber-deep">
-          How it works
+      <div className="mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-[minmax(0,420px)_1fr] lg:gap-20">
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <div className="font-sans text-[12px] font-bold uppercase tracking-[0.2em] text-amber-deep">
+            How it works
+          </div>
+          <h2 className="mt-3 font-display text-[clamp(28px,5vw,52px)] font-extrabold uppercase leading-[1] tracking-[-0.02em]">
+            Return to re-owned, in five steps.
+          </h2>
+          <p className="mt-4 max-w-[44ch] text-[15px] leading-relaxed text-ash">
+            A vision AI grades the product from photos. A deterministic router
+            and a demand-matching layer send it to the best next owner. The
+            grade itself is signed and verifiable.
+          </p>
         </div>
-        <h2 className="mt-3 max-w-[18ch] font-display text-[clamp(28px,5vw,52px)] font-extrabold uppercase leading-[1] tracking-[-0.02em]">
-          A returned product, given its next life — in five steps.
-        </h2>
-        <p className="mt-4 max-w-[60ch] text-[15px] leading-relaxed text-ash">
-          Two AI engines: one grades the product from photos, one finds it the
-          right buyer. Every step is verifiable.
-        </p>
 
-        <div className="relative mt-14 grid gap-10 sm:gap-14">
+        <div className="relative grid gap-10 sm:gap-14">
           {/* amber thread */}
           <div
             data-flow-thread

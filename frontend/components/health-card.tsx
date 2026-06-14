@@ -42,10 +42,10 @@ export function HealthCard({
       className="overflow-hidden rounded-[20px] border border-hair-soft bg-pearl shadow-md"
     >
       {/* dark product topband */}
-      <div className="relative flex h-[130px] items-center justify-center bg-[radial-gradient(130%_120%_at_70%_0%,#2b2b2f,#131315)]">
+      <div className="relative h-[150px] overflow-hidden bg-black">
         <ProductGlyph
           kind={card.thumb_key}
-          className="w-[58%] drop-shadow-[0_14px_18px_rgba(0,0,0,0.5)]"
+          className="absolute inset-0 h-full w-full object-contain"
         />
         <span className="absolute bottom-2.5 left-3.5 font-display text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/50">
           ReBridge · Verified

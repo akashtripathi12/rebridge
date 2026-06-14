@@ -29,13 +29,13 @@ export function MarketGridCard({ item }: { item: MarketplaceItem }) {
       data-item={item.item_id}
       className="group flex flex-col overflow-hidden rounded-card border border-hair bg-pearl shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md"
     >
-      <div className="relative grid aspect-[4/3] place-items-center overflow-hidden bg-[radial-gradient(140%_120%_at_30%_8%,#2a2a2e,#161618_60%,#0e0e10)]">
+      <div className="relative grid aspect-[4/3] place-items-center overflow-hidden bg-black">
         <ProductGlyph
           kind={item.thumb_key}
-          className="w-[58%] drop-shadow-[0_20px_24px_rgba(0,0,0,0.5)] transition-transform duration-300 group-hover:scale-105"
+          className="w-[58%] transition-transform duration-300 group-hover:scale-105"
         />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-pill bg-white/90 px-2 py-1 font-sans text-[10px] font-bold text-trust">
-          <ShieldCheck className="h-3 w-3" /> Verified
+        <span className="absolute left-3 top-3 inline-flex items-center justify-center rounded-pill bg-white/95 p-1.5 font-sans text-[10px] font-bold text-trust shadow-sm">
+          <ShieldCheck className="h-3.5 w-3.5" />
         </span>
       </div>
       <div className="flex flex-col gap-2 p-4">
@@ -59,15 +59,6 @@ export function MarketGridCard({ item }: { item: MarketplaceItem }) {
             </>
           ) : null}
         </div>
-        {top ? (
-          <div
-            data-testid="market-intent"
-            className="inline-flex w-fit items-center gap-1.5 rounded-pill bg-[#E7F4EC] px-2.5 py-1 text-[10.5px] font-bold text-trust"
-          >
-            <span className="text-[7px] leading-none">●</span>
-            {top.match_reasons[0]}
-          </div>
-        ) : null}
       </div>
     </Link>
   );

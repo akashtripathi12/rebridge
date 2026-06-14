@@ -24,9 +24,9 @@ const COMPARE: { label: string; old: string; rb: string; delta: string }[] = [
 ];
 
 const IMPACT: { Icon: React.ComponentType<{ className?: string }>; value: string; label: string }[] = [
-  { Icon: Route, value: "596 km", label: "average distance saved per routed return" },
-  { Icon: Leaf, value: "0.9 kg", label: "CO₂e avoided per item routed to a neighbour" },
-  { Icon: Sparkles, value: "+₹230", label: "average margin recovered vs. write-off" },
+  { Icon: Route, value: "596 km", label: "distance avoided per routed return (modelled)" },
+  { Icon: Leaf, value: "0.9 kg", label: "CO₂e avoided per neighbour handoff (modelled)" },
+  { Icon: Sparkles, value: "+₹230", label: "modelled margin vs. write-off (Good-grade, seeded band)" },
 ];
 
 /**
@@ -86,23 +86,18 @@ export function EconomicsDeep() {
       ref={root}
       id="economics"
       data-testid="economics-deep"
-      className="scroll-mt-16 bg-paper px-4 py-20 sm:px-6 sm:py-28"
+      className="scroll-mt-16 bg-canvas px-4 py-20 sm:px-6 sm:py-28"
     >
-      <div className="mx-auto grid max-w-[1080px] gap-12 lg:grid-cols-[minmax(0,440px)_1fr] lg:gap-16">
+      <div className="mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-[minmax(0,440px)_1fr] lg:gap-16">
         <div>
           <div className="font-sans text-[12px] font-bold uppercase tracking-[0.2em] text-amber-deep">
             The unit economics
           </div>
           <h2 className="mt-3 font-display text-[clamp(28px,5vw,52px)] font-extrabold uppercase leading-[1] tracking-[-0.02em]">
-            ₹3 in. ₹230 back.
+            One inspection. Hundreds back.
           </h2>
-          <p className="mt-4 max-w-[44ch] text-[15px] leading-relaxed text-ash">
-            Every routed return is a margin decision, not a write-off. The same
-            receipt the operator sees on each item — the AI inspection cost,
-            pickup, the recovered value, the route, and the buyers nearby.
-          </p>
-          <div className="mt-6 max-w-[360px]">
-            <Receipt rows={RECEIPT_ROWS} />
+          <div className="mt-8 max-w-[360px]">
+            <Receipt rows={RECEIPT_ROWS} className="bg-white" />
           </div>
         </div>
 
@@ -114,9 +109,9 @@ export function EconomicsDeep() {
             </div>
             <div
               data-testid="compare-table"
-              className="mt-3 overflow-hidden rounded-card border border-hair bg-canvas"
+              className="mt-3 overflow-hidden rounded-card border border-hair bg-white"
             >
-              <div className="grid grid-cols-[1.4fr_1fr_1fr_auto] gap-3 border-b border-hair bg-paper px-4 py-2.5 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-mute">
+              <div className="grid grid-cols-[1.4fr_1fr_1fr_auto] gap-3 bg-ink px-4 py-2.5 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
                 <span>What it costs</span>
                 <span>Today</span>
                 <span>With ReBridge</span>
@@ -169,7 +164,7 @@ export function EconomicsDeep() {
                 <div
                   key={i}
                   data-impact-tile
-                  className="rounded-card border border-hair bg-canvas p-5"
+                  className="rounded-card border border-hair bg-white p-5"
                 >
                   <tile.Icon className="h-5 w-5 text-amber-deep" />
                   <div className="tnum mt-3 font-display text-[24px] font-extrabold tracking-tight text-ink">
