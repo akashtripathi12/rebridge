@@ -20,7 +20,7 @@ const SEEDS: Notif[] = [
     id: "n_welcome",
     variant: "system",
     title: "Welcome to ReBridge",
-    body: "Photograph a return, get a ₹3 AI grade, and route it to its next owner — or browse Second Chance to buy verified items nearby.",
+    body: "Photograph a return, get an AI grade, and route it to its next owner — or browse Second Chance to buy verified items nearby.",
     meta: "today",
     href: "/resell",
     created_at: new Date().toISOString(),

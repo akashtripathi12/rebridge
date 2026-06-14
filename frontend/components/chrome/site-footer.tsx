@@ -41,7 +41,7 @@ export function SiteFooter() {
             RE<span className="text-amber-deep">BRIDGE</span>
           </Link>
           <p className="mt-3 max-w-[28ch] text-[13px] leading-relaxed text-ash">
-            A ₹3 AI grade, a verifiable Health Card, and an agent that finds every
+            An AI grade, a verifiable Health Card, and an agent that finds every
             product its next owner.
           </p>
         </div>
