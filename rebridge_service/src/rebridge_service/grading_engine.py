@@ -170,6 +170,7 @@ class GradingEngine:
         attempts: list[_Attempt] = []
 
         for provider in self._providers:
+            print(f"[GradingEngine] Trying provider: {provider.name}")
             # Up to (1 + max_json_retries) attempts against this provider, but
             # a timeout or non-schema error short-circuits straight to the next
             # provider (only non-conforming JSON earns a retry).
@@ -179,11 +180,13 @@ class GradingEngine:
                         lambda p=provider: p.grade(images, catalog), self._timeout
                     )
                 except TimeoutError as exc:
+                    print(f"[GradingEngine] {provider.name} TIMEOUT: {exc}")
                     attempts.append(
                         _Attempt(provider.name, "timeout", str(exc) or "timed out")
                     )
                     break  # fall through to the next provider
                 except Exception as exc:  # noqa: BLE001 - any provider error falls through
+                    print(f"[GradingEngine] {provider.name} ERROR: {type(exc).__name__}: {exc}")
                     attempts.append(
                         _Attempt(provider.name, "error", f"{type(exc).__name__}: {exc}")
                     )
@@ -194,6 +197,7 @@ class GradingEngine:
                 except GradeSchemaError as exc:
                     # Non-conforming JSON: retry the same provider until the
                     # retry budget is spent, then fall through.
+                    print(f"[GradingEngine] {provider.name} NON-CONFORMING JSON: {exc}")
                     attempts.append(
                         _Attempt(provider.name, "non_conforming_json", str(exc))
                     )

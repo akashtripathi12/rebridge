@@ -132,7 +132,7 @@ class DynamoReviewQueueRepository(ReviewQueueRepository):
             "confidence": confidence,
             "priority": priority,
             "GSI3PK": _GSI3_PENDING_PK,
-            "GSI3SK": priority,
+            "GSI3SK": str(priority),
         }
         grade = _serialize_grade(entry.grade)
         if grade is not None:

@@ -74,6 +74,21 @@ def _build_prompt(catalog: CatalogContext) -> str:
         "location and severity, and check completeness against the expected "
         "components."
     )
+    # Pull the valid grade labels dynamically from the domain enum so they
+    # stay in sync with the strict parser.
+    from rebridge_service.models import Grade
+    grade_options = " | ".join(f'"{g.value}"' for g in Grade)
+    lines.append(
+        "You MUST output ONLY a valid JSON object matching this exact schema "
+        "(do not include markdown formatting or backticks):\n"
+        "{\n"
+        f'  "grade": {grade_options},\n'
+        '  "defects": [{"location": "string", "severity": "string"}],\n'
+        '  "completeness": {"is_complete": boolean, "missing_components": ["string"]},\n'
+        '  "confidence": float between 0.0 and 1.0,\n'
+        '  "summary": "string"\n'
+        "}"
+    )
     return "\n".join(lines)
 
 

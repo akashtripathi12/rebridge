@@ -305,8 +305,6 @@ class GradingPipeline:
                 reason="grade already present for this idempotency key",
             )
 
-        self.item_repo.update_status(item_id, ItemStatus.GRADED)
-
         # Render + sign + persist the Product Health Card (Requirements 11, 12).
         card = self.card_service.issue_card(
             item_id, annotated_photo_keys=list(photo_keys)
@@ -320,6 +318,8 @@ class GradingPipeline:
         routing_result: RoutingResult | None = None
         if self.router is not None:
             routing_result = self.router.route(item_id)
+
+        self.item_repo.update_status(item_id, ItemStatus.GRADED)
 
         return PipelineResult(
             outcome=PipelineOutcome.GRADED,

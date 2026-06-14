@@ -53,6 +53,7 @@ from __future__ import annotations
 import json
 import random
 import time
+import traceback
 from dataclasses import dataclass, field
 from typing import Any, Callable, Protocol, runtime_checkable
 
@@ -188,9 +189,13 @@ class GradingWorker:
         attempt = 0
         while True:
             try:
+                print(f"[Worker] Starting pipeline.run for attempt {attempt}")
                 pipeline.run(message)
+                print(f"[Worker] Finished pipeline.run for attempt {attempt}")
                 return True
             except Exception as exc:  # noqa: BLE001 - classified by is_transient
+                print(f"[Worker] Pipeline error on attempt {attempt}: {exc}")
+                traceback.print_exc()
                 exhausted = attempt >= self.max_retries
                 if not self.is_transient(exc) or exhausted:
                     # Permanent error, or transient but out of retries -> DLQ.

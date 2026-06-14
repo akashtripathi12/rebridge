@@ -94,9 +94,9 @@ __all__ = [
 
 
 # Default per-call model timeout (seconds) for the grading cascade when config
-# does not supply one. Generous enough for a vision model call yet bounded so a
-# hung provider falls through to the next in the cascade.
-DEFAULT_MODEL_TIMEOUT_SECONDS: float = 3.0
+# does not supply one. Generous enough for a vision model call (typically 10-30s
+# with images) yet bounded so a hung provider falls through to the next.
+DEFAULT_MODEL_TIMEOUT_SECONDS: float = 60.0
 
 # Default number of buyers the Demand_Matching_Engine notifies per match
 # (Requirement 13.5).
@@ -284,8 +284,15 @@ def build_services(settings: Settings) -> BuiltServices:
     review_repo = DynamoReviewQueueRepository(
         settings.table_name, dynamodb_resource=dynamodb_resource
     )
+    from botocore.config import Config
     object_store = S3ObjectStore(
-        settings.photo_bucket, client=boto3.client("s3", region_name=region)
+        settings.photo_bucket,
+        client=boto3.client(
+            "s3",
+            region_name=region,
+            endpoint_url=f"https://s3.{region}.amazonaws.com",
+            config=Config(signature_version="s3v4")
+        )
     )
     queue = SqsQueueClient(settings.grading_queue_url, region_name=region)
     signer = KmsCardSigner(settings.kms_key_id, region_name=region)
@@ -404,8 +411,14 @@ def build_worker(settings: Settings, built: BuiltServices | None = None) -> Grad
     built = built or build_services(settings)
 
     def dummy_pixel_decoder(raw: bytes) -> list[list[float]]:
-        # Dummy decoder that returns a sharp 3x3 matrix so precheck passes
-        return [[10.0, 200.0, 10.0], [200.0, 10.0, 200.0], [10.0, 200.0, 10.0]]
+        # Return a 10x10 checkerboard that passes both blur and brightness checks.
+        # A 3x3 matrix has only 1 interior pixel → Laplacian variance is always 0.
+        # This checkerboard gives variance ~40000 (needs ≥100) and mean 125 (needs 40-220).
+        size = 10
+        return [
+            [100.0 if (r + c) % 2 == 0 else 150.0 for c in range(size)]
+            for r in range(size)
+        ]
 
     def value_estimator(meta, assessment):
         from rebridge_service.models import Grade

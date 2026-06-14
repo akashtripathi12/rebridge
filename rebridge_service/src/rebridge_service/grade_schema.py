@@ -179,11 +179,15 @@ def _parse_confidence(raw: Any) -> float:
 def _parse_grade(raw: Any) -> Grade:
     if not isinstance(raw, str):
         raise GradeSchemaError(f"grade must be a string, got {type(raw).__name__}")
-    try:
-        return Grade(raw)
-    except ValueError:
-        allowed = ", ".join(GRADE_LABELS)
-        raise GradeSchemaError(f"grade must be one of [{allowed}], got {raw!r}") from None
+    
+    # Do a case-insensitive match against the valid labels
+    normalized = raw.strip().lower()
+    for g in Grade:
+        if g.value.lower() == normalized:
+            return g
+
+    allowed = ", ".join(GRADE_LABELS)
+    raise GradeSchemaError(f"grade must be one of [{allowed}], got {raw!r}")
 
 
 def parse_grade_assessment(data: str | bytes | bytearray | dict[str, Any]) -> GradeAssessment:
@@ -201,8 +205,19 @@ def parse_grade_assessment(data: str | bytes | bytearray | dict[str, Any]) -> Gr
         data = data.decode("utf-8")
 
     if isinstance(data, str):
+        # Defensively strip markdown formatting and leading/trailing whitespace
+        # in case the model ignores the prompt and wraps the JSON.
+        cleaned = data.strip()
+        if cleaned.startswith("```json"):
+            cleaned = cleaned[7:]
+        elif cleaned.startswith("```"):
+            cleaned = cleaned[3:]
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3]
+        cleaned = cleaned.strip()
+
         try:
-            decoded = json.loads(data)
+            decoded = json.loads(cleaned)
         except (json.JSONDecodeError, ValueError) as exc:
             raise GradeSchemaError(f"payload is not valid JSON: {exc}") from exc
     else:
