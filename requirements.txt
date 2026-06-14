@@ -1,0 +1,22 @@
+# Consolidated project dependencies across all 3 monorepo packages
+# (rebridge_api, rebridge_service, rebridge_data)
+
+# Core External Dependencies
+boto3>=1.34
+fastapi>=0.110
+pydantic>=2.6
+mangum>=0.17
+pyjwt[crypto]>=2.8
+
+# Test / Development Dependencies
+pytest>=8.0
+hypothesis>=6.100
+httpx>=0.27
+moto[dynamodb]>=5.0
+
+# Local Packages (Editable installs for development)
+# To deploy to production without editable mode, replace the following lines 
+# with your actual deployment package paths or remove them if packaging separately.
+-e ./rebridge_data
+-e ./rebridge_service
+-e ./rebridge_api

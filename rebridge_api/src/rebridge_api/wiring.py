@@ -179,16 +179,30 @@ class Settings:
             value = src.get(key)
             return value if value is not None and value != "" else default
 
+        def _get_float(key: str, default: float) -> float:
+            value = _get(key, "")
+            if not value:
+                return default
+            try:
+                return float(value)
+            except ValueError as e:
+                raise ValueError(f"Invalid numeric value for {key}: {value}") from e
+
+        def _get_int(key: str, default: int) -> int:
+            value = _get(key, "")
+            if not value:
+                return default
+            try:
+                return int(value)
+            except ValueError as e:
+                raise ValueError(f"Invalid integer value for {key}: {value}") from e
+
         region = _get("REBRIDGE_REGION", _get("AWS_REGION", DEFAULT_REGION))
 
         return cls(
-            confidence_threshold=float(
-                _get("REBRIDGE_CONFIDENCE_THRESHOLD", str(DEFAULT_CONFIDENCE_THRESHOLD))
-            ),
-            model_timeout=float(
-                _get("REBRIDGE_MODEL_TIMEOUT", str(DEFAULT_MODEL_TIMEOUT_SECONDS))
-            ),
-            top_n=int(_get("REBRIDGE_TOP_N", str(DEFAULT_TOP_N))),
+            confidence_threshold=_get_float("REBRIDGE_CONFIDENCE_THRESHOLD", DEFAULT_CONFIDENCE_THRESHOLD),
+            model_timeout=_get_float("REBRIDGE_MODEL_TIMEOUT", DEFAULT_MODEL_TIMEOUT_SECONDS),
+            top_n=_get_int("REBRIDGE_TOP_N", DEFAULT_TOP_N),
             table_name=_get("REBRIDGE_TABLE_NAME", cls.table_name),
             photo_bucket=_get("REBRIDGE_PHOTO_BUCKET", cls.photo_bucket),
             grading_queue_url=_get("REBRIDGE_GRADING_QUEUE_URL", cls.grading_queue_url),
@@ -240,6 +254,7 @@ class BuiltServices:
     precheck: QualityPrecheck
     review_console: ReviewConsoleService
     demand_engine: DemandMatchingEngine
+    price_estimator: PriceEstimator
 
 
 def build_services(settings: Settings) -> BuiltServices:
@@ -295,11 +310,12 @@ def build_services(settings: Settings) -> BuiltServices:
     # ConfidenceGate from configured threshold (default 0.80, Requirement 6.3).
     confidence_gate = ConfidenceGate(threshold=settings.confidence_threshold)
     card_service = HealthCardService(signer, item_repo)
-    item_service = ItemService(item_repo, object_store)
+    item_service = ItemService(item_repo, object_store, eventing=eventing)
     precheck = QualityPrecheck()
+    price_estimator = PriceEstimator()
 
     routing = RoutingAgent(
-        price=PriceEstimator(),
+        price=price_estimator,
         cost=CostModel(),
         item_repo=item_repo,
         demand=DemandProbe.from_buyer_repository(buyers),
@@ -341,6 +357,7 @@ def build_services(settings: Settings) -> BuiltServices:
         precheck=precheck,
         review_console=review_console,
         demand_engine=demand_engine,
+        price_estimator=price_estimator,
     )
 
 
@@ -386,6 +403,16 @@ def build_worker(settings: Settings, built: BuiltServices | None = None) -> Grad
 
     built = built or build_services(settings)
 
+    def dummy_pixel_decoder(raw: bytes) -> list[list[float]]:
+        # Dummy decoder that returns a sharp 3x3 matrix so precheck passes
+        return [[10.0, 200.0, 10.0], [200.0, 10.0, 200.0], [10.0, 200.0, 10.0]]
+
+    def value_estimator(meta, assessment):
+        from rebridge_service.models import Grade
+        grade = assessment.grade if assessment else Grade.ACCEPTABLE
+        band = built.price_estimator.estimate(meta.category, grade, meta.age_months)
+        return band.point
+
     pipeline = GradingPipeline(
         item_repo=built.item_repo,
         object_store=built.object_store,
@@ -396,6 +423,8 @@ def build_worker(settings: Settings, built: BuiltServices | None = None) -> Grad
         card_service=built.card_service,
         eventing=built.eventing,
         router=EventEmittingRouter(built.routing, built.eventing),
+        pixel_decoder=dummy_pixel_decoder,
+        value_estimator=value_estimator,
     )
 
     worker = GradingWorker(pipeline_provider=lambda: pipeline)

@@ -90,7 +90,7 @@ class CachingJwksProvider:
 
     url: str
     ttl_seconds: float = 3600.0
-    _opener: Callable[[str], bytes] = field(default=None, repr=False)  # type: ignore[assignment]
+    _opener: Callable[[str], bytes] | None = field(default=None, repr=False)
     _cached: Mapping[str, Any] | None = field(default=None, init=False, repr=False)
     _fetched_at: float = field(default=0.0, init=False, repr=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)

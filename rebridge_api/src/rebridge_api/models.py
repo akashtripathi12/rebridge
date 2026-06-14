@@ -387,16 +387,22 @@ class UpdateListingRequest(BaseModel):
     geohash5: str | None = None
 
     def to_patch(self) -> ListingPatch:
-        return ListingPatch(
-            status=self.status,
-            category=self.category,
-            price=self.price,
-            geohash5=self.geohash5,
-        )
+        return ListingPatch(**self.model_dump(exclude_unset=True))
 
 
 class ListingResponse(ListingFacetModel):
     """A listing returned by listing CRUD (Requirement 3.x)."""
+
+    @classmethod
+    def from_record(cls, rec: ListingRecord) -> "ListingResponse":
+        return cls(
+            item_id=rec.item_id,
+            status=rec.status,
+            category=rec.category,
+            price=rec.price,
+            geohash5=rec.geohash5,
+            listed_at=rec.listed_at,
+        )
 
 
 class MarketListingModel(BaseModel):

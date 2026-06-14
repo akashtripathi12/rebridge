@@ -103,7 +103,7 @@ export const presignResponseSchema = z.object({
 export const gradeAcceptedSchema = z.object({
   item_id: z.string(),
   idempotency_key: z.string(),
-  status: z.string(),
+  status: z.string().optional(),
 });
 
 export const routeDecisionSchema = decisionFacetSchema;
@@ -185,11 +185,11 @@ export const marketplaceItemSchema = z.object({
   listing_id: z.string(),
   item_id: z.string(),
   title: z.string(),
-  grade: gradeEnum,
+  grade: gradeEnum.nullable().optional(),
   distance_km: z.number(),
   price: money,
   price_new: money,
-  health_card_id: z.string(),
+  health_card_id: z.string().nullable().optional(),
   category: z.string(),
   thumb_key: z.string(),
 });

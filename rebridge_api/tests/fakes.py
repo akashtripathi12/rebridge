@@ -78,10 +78,13 @@ class FakeItemRepository(ItemRepository):
             listing=copy.deepcopy(self._listings.get(item_id)),
         )
 
-    def update_status(self, item_id: str, status: ItemStatus) -> None:
+    def update_status(self, item_id: str, status: ItemStatus, expected_status: ItemStatus | None = None) -> None:
         meta = self._meta.get(item_id)
         if meta is None:
             raise KeyError(f"unknown item: {item_id}")
+        if expected_status is not None and meta.status != expected_status:
+            from rebridge_data.interfaces import ConditionCheckFailed
+            raise ConditionCheckFailed(f"Status {meta.status} != {expected_status}")
         self._meta[item_id] = replace(meta, status=status)
 
     def put_grade(self, item_id: str, grade: GradeRecord) -> None:
@@ -94,7 +97,8 @@ class FakeItemRepository(ItemRepository):
         return copy.deepcopy(self._grades.get(item_id))
 
     def put_grade_if_absent(self, item_id: str, idem_key: str, grade: GradeRecord) -> bool:
-        if idem_key in self._idem_keys:
+        existing = self._grades.get(item_id)
+        if existing is not None and existing.confirmed:
             return False
         stored = copy.deepcopy(grade)
         stored.idem_key = idem_key
@@ -146,6 +150,14 @@ class FakeItemRepository(ItemRepository):
             and (geo is None or listing.geohash5.startswith(geo))
         ]
         return results[:limit]
+
+    def batch_get_items(self, item_ids: list[str]) -> list[ItemAggregate]:
+        results = []
+        for item_id in item_ids:
+            item = self.get_item(item_id)
+            if item is not None:
+                results.append(item)
+        return results
 
 
 class FakeObjectStore(ObjectStore):

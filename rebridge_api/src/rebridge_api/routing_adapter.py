@@ -41,5 +41,10 @@ class EventEmittingRouter:
 
     def route(self, item_id: str) -> RoutingDecision:
         decision = self._routing.decide(item_id)
-        self._eventing.emit_routed(item_id, decision.disposition)
+        try:
+            self._eventing.emit_routed(item_id, decision.disposition)
+        except Exception:
+            # Fallback: the decision is persisted, so we return it even if
+            # the downstream event emission fails.
+            pass
         return decision

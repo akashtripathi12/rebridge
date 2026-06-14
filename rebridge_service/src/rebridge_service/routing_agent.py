@@ -331,7 +331,18 @@ class AgentRoutingStrategy(RoutingStrategy):
     name = "agent"
 
     def __init__(self) -> None:
-        self.trace: list[str] = []
+        import threading
+        self._local = threading.local()
+        
+    @property
+    def trace(self) -> list[str]:
+        if not hasattr(self._local, "trace"):
+            self._local.trace = []
+        return self._local.trace
+        
+    @trace.setter
+    def trace(self, value: list[str]) -> None:
+        self._local.trace = value
 
     def decide(self, ctx: RoutingContext) -> RoutingDecision:
         # Agent-style deliberation steps. These are observational only; the

@@ -58,6 +58,7 @@ from typing import Any, Callable, Mapping
 
 from decimal import Decimal
 
+from rebridge_service.eventing_service import EventingService
 from rebridge_data.interfaces import ItemRepository, ObjectStore
 from rebridge_data.models import (
     ItemAggregate,
@@ -221,6 +222,7 @@ class ItemService:
 
     item_repo: ItemRepository
     object_store: ObjectStore | None = None
+    eventing: EventingService | None = None
     id_factory: Callable[[], str] = lambda: uuid.uuid4().hex
     clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc)
 
@@ -369,6 +371,9 @@ class ItemService:
             listed_at=listed_at if listed_at is not None else self.clock().isoformat(),
         )
         self.item_repo.put_listing(item_id, listing)
+        self.item_repo.update_status(item_id, ItemStatus.LISTED)
+        if self.eventing:
+            self.eventing.emit_listed(item_id)
         return listing
 
     def get_listing(self, item_id: str) -> ListingRecord | None:
@@ -406,9 +411,49 @@ class ItemService:
         Raises :class:`ItemNotFound` for an unknown Item. Deletion is idempotent
         for an existing Item: removing an absent listing is a no-op.
         """
-        if self.item_repo.get_item(item_id) is None:
+        aggregate = self.item_repo.get_item(item_id)
+        if aggregate is None:
             raise ItemNotFound(item_id)
+            
         self.item_repo.delete_listing(item_id)
+        
+        # Revert the status to GRADED if it was LISTED
+        if aggregate.meta.status == ItemStatus.LISTED:
+            from rebridge_data.interfaces import ConditionCheckFailed
+            try:
+                self.item_repo.update_status(item_id, ItemStatus.GRADED, expected_status=ItemStatus.LISTED)
+            except ConditionCheckFailed:
+                pass
+
+    def buy_listing(self, item_id: str) -> None:
+        """Transition an Item to SOLD and emit the SOLD lifecycle event.
+        
+        Requires that the Item exists and has a LISTING facet. Prevents
+        double-sells by checking if the Item is already SOLD.
+        
+        Raises
+        ------
+        ItemNotFound
+            When ``item_id`` does not identify an existing Item.
+        ListingNotFound
+            When the Item exists but has no LISTING facet.
+        ValueError
+            When the Item is already SOLD or not in LISTED status.
+        """
+        aggregate = self.item_repo.get_item(item_id)
+        if aggregate is None:
+            raise ItemNotFound(item_id)
+        if aggregate.listing is None:
+            raise ListingNotFound(item_id)
+            
+        from rebridge_data.interfaces import ConditionCheckFailed
+        try:
+            self.item_repo.update_status(item_id, ItemStatus.SOLD, expected_status=ItemStatus.LISTED)
+        except ConditionCheckFailed:
+            raise ValueError(f"Item {item_id} cannot be sold because its status is {aggregate.meta.status}")
+            
+        if self.eventing:
+            self.eventing.emit_sold(item_id)
 
     # -- helpers -----------------------------------------------------------
     @staticmethod

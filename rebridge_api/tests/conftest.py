@@ -93,7 +93,7 @@ class Harness:
         self.buyers = SeededBuyerPersonaRepository(SEED_PERSONAS)
 
         self.eventing = EventingService(self.publisher)
-        self.item_service = ItemService(self.item_repo, self.object_store)
+        self.item_service = ItemService(self.item_repo, self.object_store, eventing=self.eventing)
         self.routing = RoutingAgent(
             price=PriceEstimator(),
             cost=CostModel(),

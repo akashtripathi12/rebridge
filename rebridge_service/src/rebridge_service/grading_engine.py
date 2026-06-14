@@ -113,14 +113,17 @@ def thread_timeout_runner(call: ProviderCall, timeout: float | None) -> RawModel
 
     if timeout is None:
         return call()
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(call)
-        try:
-            return future.result(timeout=timeout)
-        except FuturesTimeoutError as exc:  # pragma: no cover - timing dependent
-            raise TimeoutError(
-                f"provider call exceeded {timeout}s timeout"
-            ) from exc
+    
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(call)
+    try:
+        return future.result(timeout=timeout)
+    except FuturesTimeoutError as exc:  # pragma: no cover - timing dependent
+        raise TimeoutError(
+            f"provider call exceeded {timeout}s timeout"
+        ) from exc
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
 
 
 class GradingEngine:

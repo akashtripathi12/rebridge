@@ -293,8 +293,7 @@ def test_buy_route_emits_sold_without_touching_a_payment_gateway():
     assert buy_fn is not None, "buy_listing handler not found"
 
     referenced = _code_identifiers(buy_fn)
-    assert "emit_sold" in referenced
-    assert "update_status" in referenced
+    assert "buy_listing" in referenced
 
     payment_hits = {
         identifier

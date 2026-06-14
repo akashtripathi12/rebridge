@@ -59,6 +59,21 @@
   }
 }
 
+/* Resell — inline scan sweep over the captured photo. */
+@keyframes scanmove {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 1;
+  }
+}
+
 /* Hero stat ticker marquee. */
 .ticker-track {
   animation: ticker 30s linear infinite;

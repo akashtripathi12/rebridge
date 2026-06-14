@@ -18,6 +18,7 @@ from rebridge_data.interfaces import (
     ObjectStore,
     QueueClient,
     ReviewQueueRepository,
+    ConditionCheckFailed,
 )
 from rebridge_data.kms_card_signer import KmsCardSigner
 from rebridge_data.models import (
@@ -44,6 +45,7 @@ from rebridge_data.s3_object_store import S3ObjectStore
 __all__ = [
     # interfaces
     "ItemRepository",
+    "ConditionCheckFailed",
     # concrete implementations
     "DynamoItemRepository",
     "ReviewQueueRepository",

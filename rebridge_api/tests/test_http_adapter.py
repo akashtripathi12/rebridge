@@ -24,12 +24,13 @@ def _reset_module_app():
     http_adapter.reset_app()
 
 
-def test_handler_is_mangum_instance():
-    assert isinstance(http_adapter.handler, Mangum)
+def test_handler_is_mangum_function():
+    assert callable(http_adapter.handler)
 
 
 def test_handler_wraps_a_fastapi_app():
-    assert isinstance(http_adapter.handler.app, FastAPI)
+    http_adapter.handler(_apigw_v2_get_event("/healthz"), None)
+    assert isinstance(http_adapter._handler.app, FastAPI)
 
 
 def test_get_app_builds_default_app_lazily():

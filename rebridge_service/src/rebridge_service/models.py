@@ -36,7 +36,19 @@ __all__ = [
     "ReviewQueueEntry",
     "BuyerPersona",
     "LifecycleEvent",
+    "KNOWN_CATEGORIES",
 ]
+
+KNOWN_CATEGORIES: tuple[str, ...] = (
+    "shoes",
+    "baby",
+    "tech",
+    "books",
+    "electronics",
+    "apparel",
+    "home",
+    "toys",
+)
 
 
 class ItemStatus(Enum):

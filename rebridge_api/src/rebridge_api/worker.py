@@ -221,7 +221,10 @@ class GradingWorker:
 # Module-level handler seam (mirrors set_services/get_services)
 # ---------------------------------------------------------------------------
 
+import threading
+
 _WORKER: GradingWorker | None = None
+_WORKER_LOCK = threading.Lock()
 
 
 def set_worker(worker: GradingWorker | None) -> None:
@@ -233,18 +236,20 @@ def set_worker(worker: GradingWorker | None) -> None:
     """
 
     global _WORKER
-    _WORKER = worker
+    with _WORKER_LOCK:
+        _WORKER = worker
 
 
 def get_worker() -> GradingWorker:
     """Return the registered worker, or raise if the wiring step was skipped."""
 
-    if _WORKER is None:
-        raise RuntimeError(
-            "no GradingWorker registered; the composition root (or a test) must "
-            "call set_worker(worker) before the Lambda entrypoint is invoked"
-        )
-    return _WORKER
+    with _WORKER_LOCK:
+        if _WORKER is None:
+            raise RuntimeError(
+                "no GradingWorker registered; the composition root (or a test) must "
+                "call set_worker(worker) before the Lambda entrypoint is invoked"
+            )
+        return _WORKER
 
 
 def lambda_handler(event: dict[str, Any], context: Any = None) -> dict[str, Any]:

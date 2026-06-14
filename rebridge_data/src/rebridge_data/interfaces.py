@@ -43,7 +43,12 @@ __all__ = [
     "BuyerPersonaRepository",
     "BuyerNotifier",
     "SecondChanceShelf",
+    "ConditionCheckFailed",
 ]
+
+
+class ConditionCheckFailed(Exception):
+    """Raised when an expected condition is not met during a write operation."""
 
 
 class ItemRepository(ABC):
@@ -58,8 +63,8 @@ class ItemRepository(ABC):
         """Return the META facet plus every persisted facet, or None if unknown."""
 
     @abstractmethod
-    def update_status(self, item_id: str, status: ItemStatus) -> None:
-        """Update the lifecycle status on the META facet."""
+    def update_status(self, item_id: str, status: ItemStatus, expected_status: ItemStatus | None = None) -> None:
+        """Update the lifecycle status on the META facet. If expected_status is provided, raise ConditionCheckFailed if it does not match."""
 
     @abstractmethod
     def put_grade(self, item_id: str, grade: GradeRecord) -> None:
@@ -105,6 +110,10 @@ class ItemRepository(ABC):
         limit: int = 50,
     ) -> list[ListingRecord]:
         """Query listed items for marketplace browse (GSI1/GSI2)."""
+
+    @abstractmethod
+    def batch_get_items(self, item_ids: list[str]) -> list[ItemAggregate]:
+        """Fetch multiple items and all their facets in bulk."""
 
     @abstractmethod
     def put_grade_if_absent(

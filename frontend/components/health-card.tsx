@@ -25,9 +25,12 @@ function findingTone(severity: string): "bad" | "warn" {
 export function HealthCard({
   card,
   onReserve,
+  showActions = true,
 }: {
   card: HealthCardView;
   onReserve?: () => void;
+  /** Hide the price/reserve footer when the page already exposes them. */
+  showActions?: boolean;
 }) {
   const [origin, setOrigin] = useState("");
   useEffect(() => setOrigin(window.location.origin), []);
@@ -140,6 +143,7 @@ export function HealthCard({
       </div>
 
       {/* price + reserve */}
+      {showActions ? (
       <div className="flex flex-col gap-3 px-[18px] pb-[18px]">
         <div className="flex items-end justify-between rounded-2xl border border-hair bg-pearl px-[18px] py-3.5">
           <Price value={card.price} priceNew={card.price_new} size="lg" />
@@ -156,6 +160,7 @@ export function HealthCard({
           A-to-z guarantee · standard returns apply
         </div>
       </div>
+      ) : null}
     </div>
   );
 }

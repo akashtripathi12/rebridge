@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Archivo, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { SiteNav } from "@/components/chrome/site-nav";
+import { SiteFooter } from "@/components/chrome/site-footer";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -39,7 +41,11 @@ export default function RootLayout({
       className={`${archivo.variable} ${manrope.variable} ${jetbrains.variable}`}
     >
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <SiteNav />
+          <div className="min-h-[calc(100vh-3.5rem)]">{children}</div>
+          <SiteFooter />
+        </Providers>
       </body>
     </html>
   );

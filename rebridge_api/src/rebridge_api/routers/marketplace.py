@@ -33,19 +33,7 @@ router = APIRouter(tags=["marketplace"])
 # categories and merged.
 ALL_CATEGORY = "all"
 
-# Known demo categories iterated when ``category=all`` is requested. Combines the
-# buyer-marketplace vocabulary (shoes/baby/tech/books) with the seeded
-# price-band / persona categories (electronics/apparel/home/toys/books).
-KNOWN_CATEGORIES: tuple[str, ...] = (
-    "shoes",
-    "baby",
-    "tech",
-    "books",
-    "electronics",
-    "apparel",
-    "home",
-    "toys",
-)
+from rebridge_service.models import KNOWN_CATEGORIES
 
 
 @router.get("/marketplace", response_model=MarketplaceResponse)
@@ -60,9 +48,16 @@ def query_marketplace(
 
     records = _query_records(services, category, geo, limit)
 
+    item_ids = [rec.item_id for rec in records]
+    aggregates = services.item_repo.batch_get_items(item_ids)
+    agg_by_id = {agg.meta.item_id: agg for agg in aggregates}
+
     listings: list[MarketListingModel] = []
     for rec in records:
-        grade, health_card_id = _join_grade_and_card(services, rec.item_id)
+        agg = agg_by_id.get(rec.item_id)
+        grade = agg.grade.grade if agg and agg.grade else None
+        health_card_id = agg.card.card_id if agg and agg.card else None
+        
         distance_km = (
             geohash_distance_km(geo, rec.geohash5)
             if geo
@@ -103,14 +98,4 @@ def _query_records(
     return merged
 
 
-def _join_grade_and_card(
-    services: Services, item_id: str
-) -> tuple[str | None, str | None]:
-    """Join the item's GRADE label and CARD id for a listing (per-listing read)."""
 
-    aggregate = services.item_repo.get_item(item_id)
-    if aggregate is None:
-        return None, None
-    grade = aggregate.grade.grade if aggregate.grade is not None else None
-    health_card_id = aggregate.card.card_id if aggregate.card is not None else None
-    return grade, health_card_id

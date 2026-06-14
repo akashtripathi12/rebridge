@@ -8,20 +8,16 @@ const PNG = Buffer.from(
 );
 const file = (name: string) => ({ name, mimeType: "image/png", buffer: PNG });
 
-test.describe("Phase 2 — Returns Desk + async grade", () => {
-  test("upload → grade → poll resolves → grade + confidence render", async ({
+test.describe("Phase 2 — Returns Desk + async grade (folded into scan)", () => {
+  test("upload → grade → folded scan → reveal renders grade + confidence", async ({
     page,
   }, info) => {
     await page.goto("/returns");
 
-    // Grade disabled until 2+ photos.
     await expect(page.getByTestId("grade-btn")).toBeDisabled();
-
     await page
       .getByTestId("file-input")
       .setInputFiles([file("front.png"), file("side.png")]);
-
-    // Batch strip shows the captured thumbnails.
     await expect(page.getByTestId("thumb")).toHaveCount(2);
     const grade = page.getByTestId("grade-btn");
     await expect(grade).toBeEnabled();
@@ -31,7 +27,10 @@ test.describe("Phase 2 — Returns Desk + async grade", () => {
 
     await grade.click();
 
-    // Async poll resolves -> the in-place reveal shows grade + confidence + receipt.
+    // Folds into the 3D inspection beat, then auto-advances to the verdict.
+    await expect(page).toHaveURL(/\/scanner\?item=/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/reveal\?item=/, { timeout: 25000 });
+
     await expect(page.getByTestId("grade-stamp")).toBeVisible({ timeout: 20000 });
     await expect(page.getByTestId("confidence-value").first()).toBeVisible();
     await expect(page.getByTestId("receipt")).toContainText("Margin");
@@ -40,7 +39,9 @@ test.describe("Phase 2 — Returns Desk + async grade", () => {
     });
   });
 
-  test("blurry capture → RETAKE_REQUIRED → retake state", async ({ page }, info) => {
+  test("blurry capture → folded scan surfaces RETAKE_REQUIRED", async ({
+    page,
+  }, info) => {
     await page.goto("/returns");
     await page
       .getByTestId("file-input")
@@ -48,15 +49,17 @@ test.describe("Phase 2 — Returns Desk + async grade", () => {
     await page.getByTestId("sim-blurry").check();
     await page.getByTestId("grade-btn").click();
 
-    const retake = page.getByTestId("retake-state");
+    await expect(page).toHaveURL(/\/scanner\?item=/, { timeout: 10000 });
+    const retake = page.getByTestId("scanner-retake");
     await expect(retake).toBeVisible({ timeout: 20000 });
-    await expect(page.getByTestId("retake-btn")).toBeVisible();
+    await expect(page.getByTestId("scanner-retake-btn")).toBeVisible();
     await page.screenshot({
       path: `${SHOTS}/phase2-retake-${info.project.name}.png`,
     });
 
-    // Retake resets back to capture.
-    await page.getByTestId("retake-btn").click();
+    // Retake bounces back to capture.
+    await page.getByTestId("scanner-retake-btn").click();
+    await expect(page).toHaveURL(/\/returns/);
     await expect(page.getByTestId("grade-btn")).toBeDisabled();
   });
 });

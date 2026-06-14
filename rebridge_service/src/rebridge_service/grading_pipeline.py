@@ -239,17 +239,8 @@ class GradingPipeline:
 
         meta = self._load_meta(item_id)
 
-        # 1. Idempotency check (Requirement 7.3): a grade already persisted under
-        #    this key means we skip reprocessing and retain the existing grade.
-        existing = self.item_repo.get_grade(item_id)
-        if existing is not None and existing.idem_key == idem_key:
-            return PipelineResult(
-                outcome=PipelineOutcome.SKIPPED_IDEMPOTENT,
-                item_id=item_id,
-                idem_key=idem_key,
-                grade=existing,
-                reason="idempotency key already produced a persisted grade",
-            )
+        # 1. Idempotency check: deferred to the conditional write at the end
+        #    of the pipeline to prevent TOCTOU races (Issue 5).
 
         # The Item is now being graded.
         self.item_repo.update_status(item_id, ItemStatus.GRADING)

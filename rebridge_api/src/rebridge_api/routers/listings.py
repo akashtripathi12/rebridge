@@ -10,6 +10,7 @@ processing (Requirements 15.5, 18.4).
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, Response, status
 
@@ -48,7 +49,7 @@ def create_listing(
     404. On success the Item transitions to LISTED and a LISTED event is emitted.
     """
 
-    kwargs: dict[str, object] = {
+    kwargs: dict[str, Any] = {
         "category": body.category,
         "price": body.price,
         "geohash5": body.geohash5,
@@ -57,8 +58,6 @@ def create_listing(
         kwargs["status"] = body.status
 
     listing = services.item_service.create_listing(body.item_id, **kwargs)
-    services.item_repo.update_status(body.item_id, ItemStatus.LISTED)
-    services.eventing.emit_listed(body.item_id)
 
     # Connect Engine B: on the LISTED transition, run demand matching so the
     # top-N buyers are notified, the Item is placed on the Second-Chance shelf,
@@ -132,10 +131,9 @@ def buy_listing(
     to SOLD, and emits a SOLD lifecycle event identifying the Item.
     """
 
-    listing = services.item_service.get_listing(item_id)
-    if listing is None:
-        raise ListingNotFound(item_id)
-
-    services.item_repo.update_status(item_id, ItemStatus.SOLD)
-    services.eventing.emit_sold(item_id)
+    try:
+        services.item_service.buy_listing(item_id)
+    except ValueError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=409, detail=str(e))
     return BuyResponse(item_id=item_id, order_id=uuid.uuid4().hex)

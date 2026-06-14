@@ -58,8 +58,9 @@ test.describe("Phase 5 — buyer flow (Rahul + marketplace + Health Card)", () =
       fullPage: true,
     });
 
-    // Reserve completes the buyer narrative.
+    // Reserve completes the buyer narrative → confirmation (second life).
     await page.getByTestId("reserve-btn").click();
-    await expect(page.getByTestId("reserved-banner")).toBeVisible();
+    await expect(page.getByTestId("confirmation")).toBeVisible();
+    await expect(page.getByTestId("back-to-hero")).toBeVisible();
   });
 });

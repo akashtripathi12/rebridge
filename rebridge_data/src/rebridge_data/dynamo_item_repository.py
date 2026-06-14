@@ -109,10 +109,21 @@ class DynamoItemRepository(ItemRepository):
         self._table.put_item(Item=self._meta_to_attrs(item))
 
     def get_item(self, item_id: str) -> ItemAggregate | None:
-        resp = self._table.query(
-            KeyConditionExpression=Key("PK").eq(_item_pk(item_id)),
-        )
-        items = resp.get("Items", [])
+        items = []
+        exclusive_start_key = None
+        while True:
+            kwargs = {"KeyConditionExpression": Key("PK").eq(_item_pk(item_id))}
+            if exclusive_start_key:
+                kwargs["ExclusiveStartKey"] = exclusive_start_key
+            resp = self._table.query(**kwargs)
+            items.extend(resp.get("Items", []))
+            exclusive_start_key = resp.get("LastEvaluatedKey")
+            if not exclusive_start_key:
+                break
+
+        if not items:
+            return None
+
         by_sk = {row["SK"]: row for row in items}
         meta_attrs = by_sk.get(SK_META)
         if meta_attrs is None:
@@ -129,13 +140,22 @@ class DynamoItemRepository(ItemRepository):
             ),
         )
 
-    def update_status(self, item_id: str, status: ItemStatus) -> None:
-        self._table.update_item(
-            Key={"PK": _item_pk(item_id), "SK": SK_META},
-            UpdateExpression="SET #s = :s",
-            ExpressionAttributeNames={"#s": "status"},
-            ExpressionAttributeValues={":s": status.value},
-        )
+    def update_status(self, item_id: str, status: ItemStatus, expected_status: ItemStatus | None = None) -> None:
+        kwargs = {
+            "Key": {"PK": _item_pk(item_id), "SK": SK_META},
+            "UpdateExpression": "SET #s = :s",
+            "ExpressionAttributeNames": {"#s": "status"},
+            "ExpressionAttributeValues": {":s": status.value},
+        }
+        if expected_status is not None:
+            kwargs["ConditionExpression"] = "#s = :expected"
+            kwargs["ExpressionAttributeValues"][":expected"] = expected_status.value
+            
+        try:
+            self._table.update_item(**kwargs)
+        except self._table.meta.client.exceptions.ConditionalCheckFailedException as e:
+            from rebridge_data.interfaces import ConditionCheckFailed
+            raise ConditionCheckFailed(f"Status is not {expected_status.value}") from e
 
     # --- GRADE facet -----------------------------------------------------------
 
@@ -161,7 +181,8 @@ class DynamoItemRepository(ItemRepository):
         try:
             self._table.put_item(
                 Item=attrs,
-                ConditionExpression="attribute_not_exists(PK)",
+                ConditionExpression="attribute_not_exists(PK) OR confirmed = :false",
+                ExpressionAttributeValues={":false": False},
             )
             return True
         except self._table.meta.client.exceptions.ConditionalCheckFailedException:
@@ -170,19 +191,19 @@ class DynamoItemRepository(ItemRepository):
     # --- CARD facet ------------------------------------------------------------
 
     def put_card(self, item_id: str, card: CardRecord) -> None:
-        self._table.put_item(Item=self._card_to_attrs(item_id, card))
+        attrs = self._card_to_attrs(item_id, card)
+        self._table.put_item(Item=attrs)
+        
+        # Write secondary index item for O(1) get_card lookup
+        index_attrs = attrs.copy()
+        index_attrs["PK"] = f"CARD#{card.card_id}"
+        self._table.put_item(Item=index_attrs)
 
     def get_card(self, card_id: str) -> CardRecord | None:
-        # A card is addressed by its own card_id, not the item_id, so we look it
-        # up through a scan filter on the CARD facet. (Stage 0 cardinality is
-        # tiny; a dedicated GSI is a later-stage optimization.)
-        resp = self._table.scan(
-            FilterExpression=Key("SK").eq(SK_CARD) & Key("card_id").eq(card_id),
-        )
-        items = resp.get("Items", [])
-        if not items:
-            return None
-        return self._attrs_to_card(items[0])
+        resp = self._table.get_item(Key={"PK": f"CARD#{card_id}", "SK": SK_CARD})
+        if "Item" in resp:
+            return self._attrs_to_card(resp["Item"])
+        return None
 
     # --- DECISION facet --------------------------------------------------------
 
@@ -231,25 +252,79 @@ class DynamoItemRepository(ItemRepository):
         keyed by ``GEO#<geohash5>``, is used instead so callers can do a
         geo-radius candidate lookup constrained to one category.
         """
-        if geo is None:
-            resp = self._table.query(
-                IndexName=GSI1_MARKETPLACE,
-                KeyConditionExpression=(
+        items = []
+        exclusive_start_key = None
+        while len(items) < limit:
+            kwargs = {
+                "IndexName": GSI1_MARKETPLACE if geo is None else GSI2_GEO,
+                "Limit": limit - len(items),
+            }
+            if geo is None:
+                kwargs["KeyConditionExpression"] = (
                     Key(GSI1_PK).eq(f"LIST#{ItemStatus.LISTED.value}")
                     & Key(GSI1_SK).begins_with(f"{category}#")
-                ),
-                Limit=limit,
-            )
-        else:
-            resp = self._table.query(
-                IndexName=GSI2_GEO,
-                KeyConditionExpression=(
+                )
+            else:
+                kwargs["KeyConditionExpression"] = (
                     Key(GSI2_PK).eq(f"GEO#{geo}")
                     & Key(GSI2_SK).begins_with(f"{category}#")
-                ),
-                Limit=limit,
+                )
+                
+            if exclusive_start_key:
+                kwargs["ExclusiveStartKey"] = exclusive_start_key
+                
+            resp = self._table.query(**kwargs)
+            items.extend(resp.get("Items", []))
+            exclusive_start_key = resp.get("LastEvaluatedKey")
+            if not exclusive_start_key:
+                break
+                
+        return [self._attrs_to_listing(row) for row in items]
+
+    def batch_get_items(self, item_ids: list[str]) -> list[ItemAggregate]:
+        """Fetch multiple items and all their facets in bulk."""
+        if not item_ids:
+            return []
+            
+        keys = []
+        for item_id in item_ids:
+            pk = _item_pk(item_id)
+            for sk in [SK_META, SK_GRADE, SK_CARD, SK_DECISION, SK_LISTING]:
+                keys.append({"PK": pk, "SK": sk})
+        
+        results = []
+        for i in range(0, len(keys), 100):
+            batch_keys = keys[i:i+100]
+            resp = self._table.meta.client.batch_get_item(
+                RequestItems={self._table.name: {"Keys": batch_keys}}
             )
-        return [self._attrs_to_listing(row) for row in resp.get("Items", [])]
+            results.extend(resp["Responses"][self._table.name])
+            unprocessed = resp.get("UnprocessedKeys", {})
+            while unprocessed.get(self._table.name):
+                resp = self._table.meta.client.batch_get_item(RequestItems=unprocessed)
+                results.extend(resp["Responses"][self._table.name])
+                unprocessed = resp.get("UnprocessedKeys", {})
+                
+        by_item = {}
+        for row in results:
+            pk = row["PK"]
+            if pk not in by_item:
+                by_item[pk] = {}
+            by_item[pk][row["SK"]] = row
+            
+        aggregates = []
+        for item_id in item_ids:
+            pk = _item_pk(item_id)
+            if pk in by_item and SK_META in by_item[pk]:
+                by_sk = by_item[pk]
+                aggregates.append(ItemAggregate(
+                    meta=self._attrs_to_meta(by_sk[SK_META]),
+                    grade=self._attrs_to_grade(by_sk[SK_GRADE]) if SK_GRADE in by_sk else None,
+                    card=self._attrs_to_card(by_sk[SK_CARD]) if SK_CARD in by_sk else None,
+                    decision=self._attrs_to_decision(by_sk[SK_DECISION]) if SK_DECISION in by_sk else None,
+                    listing=self._attrs_to_listing(by_sk[SK_LISTING]) if SK_LISTING in by_sk else None,
+                ))
+        return aggregates
 
     # --- item <-> dynamo attribute mapping -------------------------------------
 

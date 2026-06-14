@@ -40,7 +40,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from rebridge_service.models import ItemStatus
+from rebridge_data.models import ItemStatus
 
 __all__ = [
     "Photo",

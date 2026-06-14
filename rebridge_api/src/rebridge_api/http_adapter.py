@@ -28,6 +28,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+import threading
+
 from fastapi import FastAPI
 from mangum import Mangum
 
@@ -38,7 +40,7 @@ __all__ = ["handler", "get_app", "set_app", "reset_app"]
 # Module-level slot for the configured app. The composition root sets this; when
 # left as ``None`` a default app is built lazily on first access.
 _app: Optional[FastAPI] = None
-
+_app_lock = threading.Lock()
 
 def set_app(app: FastAPI) -> None:
     """Install the configured FastAPI app used by the Lambda handler.
@@ -48,14 +50,16 @@ def set_app(app: FastAPI) -> None:
     """
 
     global _app
-    _app = app
+    with _app_lock:
+        _app = app
 
 
 def reset_app() -> None:
     """Clear any installed app (primarily for tests)."""
 
     global _app
-    _app = None
+    with _app_lock:
+        _app = None
 
 
 def get_app() -> FastAPI:
@@ -63,11 +67,20 @@ def get_app() -> FastAPI:
 
     global _app
     if _app is None:
-        _app = create_app()
+        with _app_lock:
+            if _app is None:
+                _app = create_app()
     return _app
 
 
-# Mangum needs a concrete ASGI app at construction time. We bind it to the app
-# resolved at import (cold start); the composition root installs its configured
-# app via ``set_app`` before this module is imported on Lambda.
-handler = Mangum(get_app())
+_handler: Optional[Mangum] = None
+_handler_lock = threading.Lock()
+
+def handler(event, context):
+    """Lazy-evaluated Mangum handler for the Lambda entrypoint."""
+    global _handler
+    if _handler is None:
+        with _handler_lock:
+            if _handler is None:
+                _handler = Mangum(get_app())
+    return _handler(event, context)
