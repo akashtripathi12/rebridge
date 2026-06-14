@@ -165,7 +165,7 @@ export function LiveDemo() {
               <div className="flex flex-col">
                 {[
                   { l: "Resale value · Good", v: "₹340", muted: false },
-                  { l: "AI grade ₹3 + pickup", v: "−₹110", muted: true },
+                  { l: "AI grade + pickup", v: "−₹110", muted: true },
                 ].map((r, i) => (
                   <div
                     key={i}

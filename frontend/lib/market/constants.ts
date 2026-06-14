@@ -6,9 +6,9 @@
  */
 export const MARKETPLACE_ALL_CATEGORY = "all";
 
-/** Buyer-facing category chips. "Nearby" maps to the all-category constant. */
+/** Buyer-facing category chips. "For you" triggers recommendation sections. */
 export const MARKET_CATEGORIES: { id: string; label: string }[] = [
-  { id: MARKETPLACE_ALL_CATEGORY, label: "Nearby" },
+  { id: MARKETPLACE_ALL_CATEGORY, label: "For you ✨" },
   { id: "baby", label: "Baby & kids" },
   { id: "shoes", label: "Shoes" },
   { id: "tech", label: "Tech" },

@@ -3,15 +3,21 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MarketGridCard } from "@/components/market/market-grid-card";
+import { RecommendedStrip } from "@/components/market/recommended-strip";
 import { marketplaceService } from "@/lib/services";
 import { MARKET_CATEGORIES } from "@/lib/market/constants";
 import { useInventory } from "@/lib/inventory";
+import { scoreForBuyer, buildSections } from "@/lib/recommendations";
+import type { ScoredItem } from "@/lib/recommendations";
+import { RAHUL } from "@/lib/persona";
 import { cn } from "@/lib/utils";
-import { ShieldCheck, MapPin } from "lucide-react";
+import { ShieldCheck, MapPin, Sparkles, Tag, Flame } from "lucide-react";
+
+type SortKey = "recommended" | "distance" | "price-low" | "price-high";
 
 export default function MarketPage() {
   const [category, setCategory] = useState(MARKET_CATEGORIES[0].id);
-  const [sort, setSort] = useState<"distance" | "price-low" | "price-high">("distance");
+  const [sort, setSort] = useState<SortKey>("recommended");
 
   const market = useQuery({
     queryKey: ["marketplace", category],
@@ -24,18 +30,59 @@ export default function MarketPage() {
     [inv.listings],
   );
 
-  const listings = useMemo(() => {
+  // ------- Recommendation scoring -------
+  const buyerProfile = useMemo(
+    () => ({
+      intentCategory: RAHUL.intentCategory,
+      secondaryInterests: RAHUL.secondaryInterests,
+      priceProfile: RAHUL.priceProfile,
+    }),
+    [],
+  );
+
+  const allScored = useMemo(() => {
     const base = (market.data?.listings ?? []).filter(
       (l) => !myListedIds.has(l.item_id),
     );
-    const arr = [...base];
-    if (sort === "distance") arr.sort((a, b) => a.distance_km - b.distance_km);
-    if (sort === "price-low")
-      arr.sort((a, b) => Number(a.price) - Number(b.price));
-    if (sort === "price-high")
-      arr.sort((a, b) => Number(b.price) - Number(a.price));
+    return scoreForBuyer(base, buyerProfile);
+  }, [market.data, myListedIds, buyerProfile]);
+
+  const sections = useMemo(
+    () => buildSections(allScored),
+    [allScored],
+  );
+
+  // Build a lookup for scored data keyed by item_id
+  const scoredLookup = useMemo(() => {
+    const map = new Map<string, ScoredItem>();
+    for (const s of allScored) map.set(s.item_id, s);
+    return map;
+  }, [allScored]);
+
+  // ------- Grid listings (respect sort) -------
+  const listings = useMemo(() => {
+    const arr = [...allScored];
+    switch (sort) {
+      case "recommended":
+        // Already sorted by relevance score desc from scoreForBuyer
+        break;
+      case "distance":
+        arr.sort((a, b) => a.distance_km - b.distance_km);
+        break;
+      case "price-low":
+        arr.sort((a, b) => Number(a.price) - Number(b.price));
+        break;
+      case "price-high":
+        arr.sort((a, b) => Number(b.price) - Number(a.price));
+        break;
+    }
     return arr;
-  }, [market.data, sort, myListedIds]);
+  }, [allScored, sort]);
+
+  // Always show recommendation sections so filters correctly apply to carousels too
+  const showRecoSections = true;
+  const activeCategory = MARKET_CATEGORIES.find((c) => c.id === category);
+  const catContext = category === "all" ? "" : ` in ${activeCategory?.label}`;
 
   return (
     <main className="bg-canvas px-4 py-10 sm:px-6">
@@ -88,9 +135,10 @@ export default function MarketPage() {
               id="sort"
               data-testid="sort-select"
               value={sort}
-              onChange={(e) => setSort(e.target.value as typeof sort)}
+              onChange={(e) => setSort(e.target.value as SortKey)}
               className="rounded-pill border border-hair bg-paper px-3 py-1.5 font-sans text-[12px] font-semibold"
             >
+              <option value="recommended">Recommended ✨</option>
               <option value="distance">Nearest first</option>
               <option value="price-low">Price · low to high</option>
               <option value="price-high">Price · high to low</option>
@@ -98,7 +146,51 @@ export default function MarketPage() {
           </div>
         </div>
 
-        {/* Grid */}
+        {/* ---- Recommendation sections ---- */}
+        {market.isLoading ? null : showRecoSections && (
+          <div className="mt-8 space-y-10">
+            {/* Picked for you */}
+            {sections.forYou.length > 0 && (
+              <RecommendedStrip
+                title={`Picked for you${catContext}`}
+                icon={<Sparkles className="h-5 w-5 text-trust-bright" />}
+                items={sections.forYou}
+                testId="reco-for-you"
+              />
+            )}
+
+            {/* Top deals */}
+            {sections.topDeals.length > 0 && (
+              <RecommendedStrip
+                title={`Top deals${catContext}`}
+                icon={<Tag className="h-5 w-5 text-amber-deep" />}
+                items={sections.topDeals}
+                testId="reco-top-deals"
+              />
+            )}
+
+            {/* Near you */}
+            {sections.nearYou.length > 0 && (
+              <RecommendedStrip
+                title={`Closest to you${catContext}`}
+                icon={<Flame className="h-5 w-5 text-sale" />}
+                items={sections.nearYou}
+                testId="reco-near-you"
+              />
+            )}
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-hair" />
+              <span className="font-sans text-[11px] font-bold uppercase tracking-[0.15em] text-mute">
+                All listings
+              </span>
+              <div className="h-px flex-1 bg-hair" />
+            </div>
+          </div>
+        )}
+
+        {/* ---- Main grid ---- */}
         {market.isLoading ? (
           <div className="mt-12 text-[13px] text-mute">Loading…</div>
         ) : listings.length === 0 ? (
@@ -118,11 +210,22 @@ export default function MarketPage() {
         ) : (
           <div
             data-testid="market-grid"
-            className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+            className={cn(
+              "grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+              showRecoSections ? "mt-6" : "mt-6",
+            )}
           >
-            {listings.map((item) => (
-              <MarketGridCard key={item.item_id} item={item} />
-            ))}
+            {listings.map((item) => {
+              const scored = scoredLookup.get(item.item_id);
+              return (
+                <MarketGridCard
+                  key={item.item_id}
+                  item={item}
+                  scoredReason={sort === "recommended" ? scored?.recommendationReason : undefined}
+                  scoredScore={sort === "recommended" ? scored?.relevanceScore : undefined}
+                />
+              );
+            })}
           </div>
         )}
       </div>

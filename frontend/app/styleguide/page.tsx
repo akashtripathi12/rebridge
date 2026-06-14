@@ -122,7 +122,7 @@ export default function StyleguidePage() {
               { kind: "line", label: "Resale value · Good", value: "₹340" },
               {
                 kind: "line",
-                label: "AI grade ₹3 + pickup ₹107",
+                label: "AI grade + pickup ₹107",
                 value: "−₹110",
                 muted: true,
               },

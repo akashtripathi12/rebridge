@@ -39,7 +39,7 @@ export function MarketCard({ item }: { item: MarketplaceItem }) {
           {item.title}
         </div>
         <div className="mt-1.5 flex items-center gap-2">
-          <GradeBadge grade={item.grade} size="sm" />
+          {item.grade && <GradeBadge grade={item.grade} size="sm" />}
           <Price value={item.price} size="md" />
         </div>
         <div className="tnum mt-1.5 flex items-center gap-1.5 whitespace-nowrap text-[10px] text-mute">

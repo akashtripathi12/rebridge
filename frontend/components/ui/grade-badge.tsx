@@ -22,12 +22,16 @@ export function GradeBadge({
     <span
       data-grade-badge
       className={cn(
-        "inline-block bg-ink font-display font-extrabold uppercase tracking-[0.04em] text-white",
+        "inline-flex flex-col items-center justify-center bg-ink font-display font-extrabold uppercase tracking-[0.04em] text-white",
         sizes[size],
         className,
       )}
     >
-      {grade}
+      {grade.split(" ").map((word, i) => (
+        <span key={i} className="leading-none">
+          {word}
+        </span>
+      ))}
     </span>
   );
 }

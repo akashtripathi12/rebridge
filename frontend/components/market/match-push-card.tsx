@@ -46,7 +46,7 @@ export function MatchPushCard({ itemId }: { itemId: string }) {
             {item.title}
           </div>
           <div className="mt-1 flex items-center gap-2">
-            <GradeBadge grade={item.grade} size="sm" />
+            {item.grade && <GradeBadge grade={item.grade} size="sm" />}
             <Price value={item.price} size="sm" />
           </div>
           {reason ? (

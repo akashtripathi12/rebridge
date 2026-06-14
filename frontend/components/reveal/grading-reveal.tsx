@@ -133,7 +133,7 @@ export function GradingReveal({
         },
         {
           kind: "line",
-          label: "AI grade ₹3 + pickup",
+          label: "AI grade + pickup",
           value: formatSignedMoney(`-${decision.cost}`),
           muted: true,
         },

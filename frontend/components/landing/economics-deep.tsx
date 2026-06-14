@@ -9,7 +9,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 
 const RECEIPT_ROWS: ReceiptRow[] = [
   { kind: "line", label: "Resale value · Good", value: "₹340" },
-  { kind: "line", label: "AI grade ₹3 + pickup", value: "−₹110", muted: true },
+  { kind: "line", label: "AI grade + pickup", value: "−₹110", muted: true },
   { kind: "rule" },
   { kind: "total", label: "Margin", value: "+₹230" },
   { kind: "line", label: "vs liquidation", value: "−₹15", muted: true },
