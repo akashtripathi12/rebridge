@@ -13,6 +13,20 @@ export function ProductGlyph({
   kind: string;
   className?: string;
 }) {
+  if (kind.startsWith("http") || kind.startsWith("blob:")) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={kind}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        decoding="async"
+        className={`object-cover ${className ?? ""}`}
+      />
+    );
+  }
+
   if (REAL_PHOTO_KINDS.has(kind)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element

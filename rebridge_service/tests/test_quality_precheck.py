@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from rebridge_service.models import ItemStatus
+from rebridge_data.models import ItemStatus
 from rebridge_service.quality_precheck import (
     BLUR_REASON,
     OVEREXPOSED_REASON,

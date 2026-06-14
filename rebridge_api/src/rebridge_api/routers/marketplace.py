@@ -63,12 +63,18 @@ def query_marketplace(
             if geo
             else seeded_distance_km(rec.item_id)
         )
+        
+        thumb_key = "shoe"
+        if agg and agg.card and agg.card.annotated_photo_keys:
+            thumb_key = agg.card.annotated_photo_keys[0]
+            
         listings.append(
             MarketListingModel.from_record(
                 rec,
                 grade=grade,
                 health_card_id=health_card_id,
                 distance_km=distance_km,
+                thumb_key=thumb_key,
             )
         )
 

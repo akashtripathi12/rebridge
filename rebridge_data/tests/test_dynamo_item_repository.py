@@ -125,7 +125,7 @@ def _grade(grade="B", confidence=0.91, idem_key=None):
     )
 
 
-def _listing(item_id="i1", status="LISTED", category="headphones", price="49.99",
+def _listing(item_id="i1", status="ACTIVE", category="headphones", price="49.99",
              geohash5="9q5cc", listed_at="2024-02-01T00:00:00Z"):
     return ListingRecord(
         item_id=item_id,

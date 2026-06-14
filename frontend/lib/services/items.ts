@@ -96,7 +96,7 @@ class MockItemsService implements ItemsService {
     return "itm_" + Math.random().toString(36).slice(2, 10);
   }
 
-  async createItem(input: CreateItemInput) {
+    async createItem(input: CreateItemInput) {
     const item_id = input.item_id ?? this.newId();
     const meta = {
       item_id,
@@ -106,6 +106,7 @@ class MockItemsService implements ItemsService {
       context_source: input.context_source,
       created_at: new Date().toISOString(),
       context_ref: input.order_id ?? null,
+      expected_price: input.expected_price ?? null,
     };
     this.store.set(item_id, {
       aggregate: { meta, grade: null, card: null, decision: null, listing: null },

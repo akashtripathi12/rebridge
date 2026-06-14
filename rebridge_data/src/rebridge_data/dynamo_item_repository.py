@@ -181,8 +181,7 @@ class DynamoItemRepository(ItemRepository):
         try:
             self._table.put_item(
                 Item=attrs,
-                ConditionExpression="attribute_not_exists(PK) OR confirmed = :false",
-                ExpressionAttributeValues={":false": False},
+                ConditionExpression="attribute_not_exists(PK)",
             )
             return True
         except self._table.meta.client.exceptions.ConditionalCheckFailedException:
@@ -261,7 +260,7 @@ class DynamoItemRepository(ItemRepository):
             }
             if geo is None:
                 kwargs["KeyConditionExpression"] = (
-                    Key(GSI1_PK).eq(f"LIST#{ItemStatus.LISTED.value}")
+                    Key(GSI1_PK).eq(f"LIST#ACTIVE")
                     & Key(GSI1_SK).begins_with(f"{category}#")
                 )
             else:
@@ -344,6 +343,8 @@ class DynamoItemRepository(ItemRepository):
         # manual ones. Only persist it when set so the META facet stays clean.
         if item.context_ref is not None:
             attrs["context_ref"] = item.context_ref
+        if item.expected_price is not None:
+            attrs["expected_price"] = Decimal(str(item.expected_price))
         return attrs
 
     @staticmethod
@@ -356,6 +357,7 @@ class DynamoItemRepository(ItemRepository):
             context_source=attrs["context_source"],
             created_at=attrs["created_at"],
             context_ref=attrs.get("context_ref"),
+            expected_price=Decimal(str(attrs["expected_price"])) if "expected_price" in attrs else None,
         )
 
     @staticmethod

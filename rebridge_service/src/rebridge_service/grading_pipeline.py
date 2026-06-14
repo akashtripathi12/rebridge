@@ -239,8 +239,17 @@ class GradingPipeline:
 
         meta = self._load_meta(item_id)
 
-        # 1. Idempotency check: deferred to the conditional write at the end
-        #    of the pipeline to prevent TOCTOU races (Issue 5).
+        # 1. Idempotency check: up-front optimistic skip to avoid expensive model 
+        # calls on duplicates. (The conditional write at the end prevents TOCTOU races).
+        existing_grade = self.item_repo.get_grade(item_id)
+        if existing_grade is not None and existing_grade.idem_key == idem_key:
+            return PipelineResult(
+                outcome=PipelineOutcome.SKIPPED_IDEMPOTENT,
+                item_id=item_id,
+                idem_key=idem_key,
+                grade=existing_grade,
+                reason="grade already present for this idempotency key",
+            )
 
         # The Item is now being graded.
         self.item_repo.update_status(item_id, ItemStatus.GRADING)

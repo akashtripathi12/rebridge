@@ -54,9 +54,10 @@ export function ResellFlow() {
 
   const [category, setCategory] = useState<Category>("shoes");
   const [ageMonths, setAgeMonths] = useState(8);
-  const contextSource = "order_scan" as const;
+  const contextSource = "manual" as const;
   const [title, setTitle] = useState("Running Shoes · UK 7");
   const [simBlurry, setSimBlurry] = useState(false);
+  const [expectedPrice, setExpectedPrice] = useState("");
   const [itemId, setItemId] = useState<string | null>(null);
 
   const addShots = (files: FileList | File[]) => {
@@ -79,6 +80,7 @@ export function ResellFlow() {
         context_source: contextSource,
         category,
         age_months: ageMonths,
+        expected_price: expectedPrice ? Number(expectedPrice) : undefined,
       });
       const presign = await itemsService.presignPhotos(meta.item_id, shots.length);
       const keys = await uploadPhotos(
@@ -87,8 +89,12 @@ export function ResellFlow() {
         shots.map((s) => s.file),
         itemsService.mode === "live",
       );
-      // Keep the first preview around — used for the verdict tile.
-      if (shots[0]) sessionStorage.setItem(`rb:photo:${meta.item_id}`, shots[0].url);
+      // Keep all previews around — used for the verdict tile and gallery.
+      const urls = shots.map((s) => s.url);
+      if (urls.length > 0) {
+        sessionStorage.setItem(`rb:photo:${meta.item_id}`, urls[0]);
+        sessionStorage.setItem(`rb:photos:${meta.item_id}`, JSON.stringify(urls));
+      }
       const gradeKeys = simBlurry ? keys.map((k) => k + "?blurry") : keys;
       await itemsService.enqueueGrade(meta.item_id, gradeKeys);
       setItemId(meta.item_id);
@@ -127,7 +133,7 @@ export function ResellFlow() {
       confidence: grade.confidence,
       price: decision.price,
       price_new: decision.price_new ?? undefined,
-      thumb_key: THUMB_BY_CATEGORY[category],
+      thumb_key: sessionStorage.getItem(`rb:photo:${itemId}`) || poll.data?.card?.annotated_photo_keys?.[0] || THUMB_BY_CATEGORY[category],
       health_card_id: poll.data?.card?.card_id ?? `card_${itemId.slice(0, 6)}`,
       status: "LISTED",
       listed_at: new Date().toISOString(),
@@ -186,6 +192,17 @@ export function ResellFlow() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Running Shoes · UK 7"
+              className="w-full rounded-input border border-hair bg-white px-3 py-2.5 font-sans text-[13.5px] focus:border-ink focus:outline-none"
+            />
+          </Field>
+
+          <Field label="Expected price (₹)">
+            <input
+              data-testid="price-input"
+              type="number"
+              value={expectedPrice}
+              onChange={(e) => setExpectedPrice(e.target.value)}
+              placeholder="e.g. 2500"
               className="w-full rounded-input border border-hair bg-white px-3 py-2.5 font-sans text-[13.5px] focus:border-ink focus:outline-none"
             />
           </Field>

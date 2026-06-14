@@ -90,6 +90,9 @@ class CreateItemRequest(BaseModel):
     order_id: str | None = Field(
         default=None, description="Scanned order reference (order-scan context)"
     )
+    expected_price: float | None = Field(
+        default=None, description="User's expected selling price"
+    )
 
     def to_service_request(self) -> dict[str, Any]:
         """Return the mapping passed to ``ItemService.create_item``.
@@ -112,6 +115,7 @@ class ItemMetaResponse(BaseModel):
     context_source: str
     created_at: str
     context_ref: str | None = None
+    expected_price: float | None = None
 
     @classmethod
     def from_meta(cls, meta: ItemMeta) -> "ItemMetaResponse":
@@ -123,6 +127,7 @@ class ItemMetaResponse(BaseModel):
             context_source=meta.context_source,
             created_at=meta.created_at,
             context_ref=meta.context_ref,
+            expected_price=float(meta.expected_price) if meta.expected_price is not None else None,
         )
 
 
@@ -445,6 +450,7 @@ class MarketListingModel(BaseModel):
         grade: str | None,
         health_card_id: str | None,
         distance_km: float,
+        thumb_key: str = "shoe",
     ) -> "MarketListingModel":
         """Build the enriched marketplace listing from a record + joined facets."""
 
@@ -462,7 +468,7 @@ class MarketListingModel(BaseModel):
             distance_km=distance_km,
             health_card_id=health_card_id,
             title=rec.category,
-            thumb_key=rec.category,
+            thumb_key=thumb_key,
         )
 
 

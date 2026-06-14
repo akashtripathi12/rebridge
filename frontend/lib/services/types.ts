@@ -24,6 +24,7 @@ export interface CreateItemInput {
    * assigns its own id.
    */
   item_id?: string;
+  expected_price?: number;
 }
 
 /** Existing-backend item/grade/listing surface (BACKEND_MAP §5). */

@@ -19,6 +19,7 @@ export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const [reserved, setReserved] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const card = useQuery({
     queryKey: ["health-card", id],
@@ -116,11 +117,29 @@ export default function ProductDetailPage() {
         <div className="mt-6 grid gap-8 lg:grid-cols-[1.1fr_minmax(0,420px)]">
           {/* Left: product gallery + summary */}
           <div className="flex flex-col gap-6">
-            <div className="grid aspect-[16/11] w-full place-items-center overflow-hidden rounded-card border border-white/10 bg-[radial-gradient(140%_120%_at_30%_8%,#2a2a2e,#161618_60%,#0e0e10)]">
-              <ProductGlyph
-                kind={c.thumb_key}
-                className="w-[55%] drop-shadow-[0_30px_36px_rgba(0,0,0,0.55)]"
-              />
+            <div className="flex flex-col gap-3">
+              <div className="grid aspect-[16/11] w-full place-items-center overflow-hidden rounded-card border border-white/10 bg-[radial-gradient(140%_120%_at_30%_8%,#2a2a2e,#161618_60%,#0e0e10)]">
+                <ProductGlyph
+                  kind={c.images?.[activeImageIndex] || c.thumb_key}
+                  className="w-[55%] drop-shadow-[0_30px_36px_rgba(0,0,0,0.55)]"
+                />
+              </div>
+              
+              {c.images && c.images.length > 1 && (
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {c.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`grid h-20 w-24 flex-shrink-0 place-items-center overflow-hidden rounded-[8px] border bg-[radial-gradient(140%_120%_at_30%_8%,#2a2a2e,#161618_60%,#0e0e10)] transition-all ${
+                        activeImageIndex === idx ? "border-trust ring-2 ring-trust/20" : "border-white/10 opacity-60 hover:opacity-100"
+                      }`}
+                    >
+                      <ProductGlyph kind={img} className="w-[60%]" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>

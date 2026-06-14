@@ -29,6 +29,7 @@ export const itemMetaSchema = z.object({
   context_source: z.string(),
   created_at: z.string(),
   context_ref: z.string().nullable().optional(),
+  expected_price: z.number().nullable().optional(),
 });
 
 export const defectSchema = z.object({
@@ -218,6 +219,7 @@ export const healthCardViewSchema = z.object({
   price: money,
   price_new: money,
   thumb_key: z.string(),
+  images: z.array(z.string()).optional(),
 });
 
 // ---------------------------------------------------------------------------

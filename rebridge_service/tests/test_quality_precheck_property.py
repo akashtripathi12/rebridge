@@ -33,7 +33,7 @@ from dataclasses import dataclass
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from rebridge_service.models import ItemStatus
+from rebridge_data.models import ItemStatus
 from rebridge_service.quality_precheck import (
     Photo,
     PrecheckConfig,
