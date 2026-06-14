@@ -51,11 +51,10 @@ export function ResellFlow() {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>("capture");
   const [shots, setShots] = useState<CapturedShot[]>([]);
-  const [orderId, setOrderId] = useState("AMZ-7F3A");
+
   const [category, setCategory] = useState<Category>("shoes");
   const [ageMonths, setAgeMonths] = useState(8);
-  const [contextSource, setContextSource] =
-    useState<"order_scan" | "manual">("order_scan");
+  const contextSource = "order_scan" as const;
   const [title, setTitle] = useState("Running Shoes · UK 7");
   const [simBlurry, setSimBlurry] = useState(false);
   const [itemId, setItemId] = useState<string | null>(null);
@@ -80,7 +79,6 @@ export function ResellFlow() {
         context_source: contextSource,
         category,
         age_months: ageMonths,
-        order_id: contextSource === "order_scan" ? orderId : undefined,
       });
       const presign = await itemsService.presignPhotos(meta.item_id, shots.length);
       const keys = await uploadPhotos(
@@ -98,7 +96,7 @@ export function ResellFlow() {
       console.error(e);
       setStage("capture");
     }
-  }, [shots, contextSource, category, ageMonths, orderId, simBlurry]);
+  }, [shots, category, ageMonths, simBlurry]);
 
   const poll = useGradePoll(itemId);
   // React to the poll terminal state.
@@ -134,13 +132,29 @@ export function ResellFlow() {
       status: "LISTED",
       listed_at: new Date().toISOString(),
     });
-    notifs.add({
-      variant: "seller",
-      title: "Routed to 3 buyers < 5 km",
-      body: `${title} — ${grade.grade}, listed for ${formatMoney(decision.price)}. AI matched ${matches.data?.match_count_within_5km ?? 0} nearby buyers.`,
-      meta: "just now",
-      href: `/resell/listings`,
+    const matchCount = matches.data?.match_count_within_5km ?? 0;
+    
+    // 1. Notify the seller that their item was routed
+    notifs.notifySellerOfRouting({
+      title,
+      grade: grade.grade,
+      price: formatMoney(decision.price),
+      matchCount,
     });
+
+    // 2. Notify nearby buyers that a matched item is available
+    if (matchCount > 0) {
+      const topMatch = matches.data?.matches[0];
+      notifs.notifyBuyersOfNewListing({
+        title,
+        grade: grade.grade,
+        price: formatMoney(decision.price),
+        itemId,
+        matchCount,
+        topDistance: topMatch?.distance_km,
+        topReason: topMatch?.match_reasons?.[0],
+      });
+    }
     setStage("listed");
   };
 
@@ -157,38 +171,13 @@ export function ResellFlow() {
         <PhotoUploader shots={shots} onAdd={addShots} onRemove={removeShot} />
 
         <aside className="flex flex-col gap-5">
-          <div>
-            <div className="font-sans text-[11px] font-bold uppercase tracking-[0.16em] text-stone">
-              Context
+          <div className="rounded-card border border-hair bg-pearl p-5 shadow-sm">
+            <div className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-stone">
+              Context · Order scan
             </div>
-            <p className="mt-1 text-[12.5px] text-mute">
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-mute">
               Helps the model and the routing decision.
             </p>
-          </div>
-
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => setContextSource("order_scan")}
-              data-testid="ctx-order"
-              className={`flex-1 rounded-pill border px-3 py-1.5 font-sans text-[12px] font-semibold ${
-                contextSource === "order_scan"
-                  ? "border-ink bg-ink text-white"
-                  : "border-hair bg-paper text-ash"
-              }`}
-            >
-              Order scan
-            </button>
-            <button
-              onClick={() => setContextSource("manual")}
-              data-testid="ctx-manual"
-              className={`flex-1 rounded-pill border px-3 py-1.5 font-sans text-[12px] font-semibold ${
-                contextSource === "manual"
-                  ? "border-ink bg-ink text-white"
-                  : "border-hair bg-paper text-ash"
-              }`}
-            >
-              From home
-            </button>
           </div>
 
           <Field label="Product title">
@@ -201,16 +190,6 @@ export function ResellFlow() {
             />
           </Field>
 
-          {contextSource === "order_scan" && (
-            <Field label="Order ID">
-              <input
-                data-testid="order-input"
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                className="tnum w-full rounded-input border border-hair bg-white px-3 py-2.5 font-mono text-[13px] focus:border-ink focus:outline-none"
-              />
-            </Field>
-          )}
 
           <Field label="Category">
             <select
@@ -312,26 +291,26 @@ export function ResellFlow() {
   if (stage === "verdict" && grade) {
     const rows: ReceiptRow[] = decision
       ? [
-          {
-            kind: "line",
-            label: `Resale value · ${grade.grade}`,
-            value: formatMoney(decision.value),
-          },
-          {
-            kind: "line",
-            label: "AI grade ₹3 + pickup",
-            value: formatSignedMoney(`-${decision.cost}`),
-            muted: true,
-          },
-          { kind: "rule" },
-          { kind: "total", label: "Margin", value: formatSignedMoney(decision.margin) },
-          { kind: "line", label: "vs liquidation", value: "−₹15", muted: true },
-          {
-            kind: "route",
-            label: "Route",
-            value: `${decision.disposition} · ${matches.data?.match_count_within_5km ?? 0} buyers < 5 km`,
-          },
-        ]
+        {
+          kind: "line",
+          label: `Resale value · ${grade.grade}`,
+          value: formatMoney(decision.value),
+        },
+        {
+          kind: "line",
+          label: "AI grade ₹3 + pickup",
+          value: formatSignedMoney(`-${decision.cost}`),
+          muted: true,
+        },
+        { kind: "rule" },
+        { kind: "total", label: "Margin", value: formatSignedMoney(decision.margin) },
+        { kind: "line", label: "vs liquidation", value: "−₹15", muted: true },
+        {
+          kind: "route",
+          label: "Route",
+          value: `${decision.disposition} · ${matches.data?.match_count_within_5km ?? 0} buyers < 5 km`,
+        },
+      ]
       : [];
     return (
       <div className="grid gap-8 lg:grid-cols-[1.05fr_minmax(0,420px)]">

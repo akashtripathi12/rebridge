@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, Menu, Repeat, ShieldCheck, ShoppingBag, UserCog, X } from "lucide-react";
+import { Bell, Menu, Repeat, RotateCcw, ShieldCheck, ShoppingBag, UserCog, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRole, roleStore } from "@/lib/role";
 import { useNotifs } from "@/lib/notifications";
@@ -24,6 +24,7 @@ const CUSTOMER_NAV: NavItem[] = [
 const OPERATOR_NAV: NavItem[] = [
   { href: "/market", label: "Market", Icon: ShoppingBag },
   { href: "/resell", label: "Resell", Icon: Repeat },
+  { href: "/returns/handle", label: "Return", Icon: RotateCcw },
   { href: "/notifications", label: "Notifications", Icon: Bell },
   { href: "/review", label: "Review", Icon: ShieldCheck },
 ];

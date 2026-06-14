@@ -58,7 +58,7 @@ function InspectionMode({ itemId }: { itemId: string }) {
           A photo was too blurry to grade confidently — we&apos;d rather be sure
           than guess.
         </p>
-        <Link href="/returns">
+        <Link href="/returns/handle">
           <Button variant="primary" size="md" data-testid="scanner-retake-btn">
             <RotateCcw className="h-4 w-4" /> Retake photos
           </Button>
@@ -115,7 +115,7 @@ function StandaloneMode() {
             <li>· Idle auto-rotate; renders on demand, pauses when offscreen.</li>
           </ul>
         </div>
-        <Link href="/returns" className="font-sans text-[13px] font-semibold text-mute hover:text-ink">
+        <Link href="/returns/handle" className="font-sans text-[13px] font-semibold text-mute hover:text-ink">
           Run the full journey from the Returns Desk →
         </Link>
       </div>

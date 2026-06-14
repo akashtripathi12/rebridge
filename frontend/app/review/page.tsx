@@ -70,14 +70,6 @@ export default function ReviewPage() {
               <span className="tnum">{reviewService.mode}</span> backend.
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            data-testid="leave-operator"
-            onClick={() => roleStore.set("customer")}
-          >
-            Switch back to Customer
-          </Button>
         </div>
 
         <div className="mt-8">

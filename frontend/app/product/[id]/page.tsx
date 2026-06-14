@@ -62,6 +62,15 @@ export default function ProductDetailPage() {
       meta: "just now",
       href: `/product/${card.data.item_id}`,
     });
+    
+    // Notify the seller that a buyer has reserved their item
+    notifs.notifySellerOfInterest({
+      title: card.data.title,
+      grade: card.data.grade,
+      price: card.data.price,
+      buyerDistance: distance,
+      itemId: card.data.item_id,
+    });
     setReserved(true);
   };
 

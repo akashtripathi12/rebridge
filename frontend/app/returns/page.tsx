@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Legacy /returns → /resell. The seller-facing route is now /resell. */
+/** Legacy /returns → /returns/handle. The operator-facing return flow. */
 export default function ReturnsRedirect() {
-  redirect("/resell");
+  redirect("/returns/handle");
 }

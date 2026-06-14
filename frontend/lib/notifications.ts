@@ -17,17 +17,7 @@ const KEY = "rb:notifs";
 
 const SEEDS: Notif[] = [
   {
-    id: "n_match_shoe",
-    variant: "buyer",
-    title: "A graded match near you",
-    body: "Running Shoes · UK 7 — GOOD, ₹340, 4 km. Wishlisted these.",
-    meta: "just now",
-    href: "/product/itm_shoe7",
-    created_at: new Date().toISOString(),
-    unread: true,
-  },
-  {
-    id: "n_listing_sample",
+    id: "n_welcome",
     variant: "system",
     title: "Welcome to ReBridge",
     body: "Photograph a return, get a ₹3 AI grade, and route it to its next owner — or browse Second Chance to buy verified items nearby.",
@@ -88,6 +78,86 @@ export const notifs = {
     };
     set([next, ...state]);
   },
+
+  /**
+   * Notify nearby buyers when a seller lists a product.
+   * Uses actual match data to build the notification dynamically.
+   */
+  notifyBuyersOfNewListing(product: {
+    title: string;
+    grade: string;
+    price: string;
+    itemId: string;
+    matchCount: number;
+    topDistance?: number;
+    topReason?: string | null;
+  }) {
+    ensureHydrated();
+    const dist = product.topDistance ?? 5;
+    const reason = product.topReason
+      ? ` — ${product.topReason}`
+      : "";
+    const next: Notif = {
+      id: `n_${Math.random().toString(36).slice(2, 10)}`,
+      variant: "buyer",
+      title: "A graded match near you",
+      body: `${product.title} — ${product.grade}, ₹${product.price}, ${dist} km away.${reason}`,
+      meta: "just now",
+      href: `/product/${product.itemId}`,
+      created_at: new Date().toISOString(),
+      unread: true,
+    };
+    set([next, ...state]);
+  },
+
+  /**
+   * Notify the seller when their listed product gets confirmed/graded
+   * and matched to nearby buyers.
+   */
+  notifySellerOfRouting(product: {
+    title: string;
+    grade: string;
+    price: string;
+    matchCount: number;
+  }) {
+    ensureHydrated();
+    const next: Notif = {
+      id: `n_${Math.random().toString(36).slice(2, 10)}`,
+      variant: "seller",
+      title: `Routed to ${product.matchCount} buyer${product.matchCount !== 1 ? "s" : ""} < 5 km`,
+      body: `${product.title} — ${product.grade}, listed for ₹${product.price}. AI matched ${product.matchCount} nearby buyer${product.matchCount !== 1 ? "s" : ""}.`,
+      meta: "just now",
+      href: "/resell/listings",
+      created_at: new Date().toISOString(),
+      unread: true,
+    };
+    set([next, ...state]);
+  },
+
+  /**
+   * Notify the seller when a buyer shows interest (reserves) their product.
+   */
+  notifySellerOfInterest(product: {
+    title: string;
+    grade: string;
+    price: string;
+    buyerDistance: number;
+    itemId: string;
+  }) {
+    ensureHydrated();
+    const next: Notif = {
+      id: `n_${Math.random().toString(36).slice(2, 10)}`,
+      variant: "seller",
+      title: "A buyer reserved your item",
+      body: `${product.title} — ${product.grade}, ₹${product.price}. Buyer is ${product.buyerDistance} km away. Pickup scheduled.`,
+      meta: "just now",
+      href: "/resell/listings",
+      created_at: new Date().toISOString(),
+      unread: true,
+    };
+    set([next, ...state]);
+  },
+
   markRead(id: string) {
     ensureHydrated();
     set(state.map((n) => (n.id === id ? { ...n, unread: false } : n)));
