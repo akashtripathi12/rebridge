@@ -1,0 +1,1926 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ReBridge API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Healthz",
+        "description": "Public, unauthenticated liveness probe.\n\nUsed by the Lambda HTTP adapter (task 17.5) as a no-dependency smoke\nroute to confirm the ASGI app serves requests end-to-end.",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Healthz Healthz Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items": {
+      "post": {
+        "tags": [
+          "items"
+        ],
+        "summary": "Create Item",
+        "description": "Create an Item from an order-scan or manual context (Req 1.1, 1.2, 1.3).\n\nThe service performs required-field validation and names any missing field;\nthat surfaces as a 422 via the registered handler (Requirement 1.3).",
+        "operationId": "create_item_items_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemMetaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{item_id}/photos:presign": {
+      "post": {
+        "tags": [
+          "items"
+        ],
+        "summary": "Presign Photos",
+        "description": "Issue ``count`` presigned PUT URLs (2-4, 5-min TTL) (Req 2.1, 2.4).\n\nA count outside the 2-4 range raises ``InvalidPhotoCount`` -> 422; an unknown\nitem raises ``ItemNotFound`` -> 404.",
+        "operationId": "presign_photos_items__item_id__photos_presign_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{item_id}/grade": {
+      "post": {
+        "tags": [
+          "items"
+        ],
+        "summary": "Enqueue Grade",
+        "description": "Enqueue an async grading submission; return 202 + Idempotency-Key (Req 7.1, 7.2).\n\nThe Idempotency-Key is derived from the item id and the photo-set hash unless\nan explicit override is supplied, then echoed in the ``Idempotency-Key``\nresponse header. An unknown item is rejected with 404 before enqueueing.",
+        "operationId": "enqueue_grade_items__item_id__grade_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GradeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeAcceptedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{item_id}": {
+      "get": {
+        "tags": [
+          "items"
+        ],
+        "summary": "Get Item",
+        "description": "Return an Item's status plus exactly its persisted facets (Req 1.4).\n\nAn unknown identifier raises ``ItemNotFound`` -> 404 (Requirement 1.5).",
+        "operationId": "get_item_items__item_id__get",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemAggregateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{item_id}/route": {
+      "post": {
+        "tags": [
+          "items"
+        ],
+        "summary": "Route Item",
+        "description": "Run the routing decision for a graded Item (Requirement 10).\n\nPersists the DECISION facet, emits a ROUTED lifecycle event identifying the\nItem and its disposition, and returns the decision with its unit-economics\nrationale (Requirement 10.7). An unknown item -> 404, an ungraded item ->\n409.",
+        "operationId": "route_item_items__item_id__route_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RouteRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteDecisionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/listings": {
+      "post": {
+        "tags": [
+          "listings"
+        ],
+        "summary": "Create Listing",
+        "description": "Create the LISTING facet for a graded Item (Req 3.1, 3.5, 15.3).\n\nAn ungraded Item is rejected with 409 (grade required); an unknown Item with\n404. On success the Item transitions to LISTED and a LISTED event is emitted.",
+        "operationId": "create_listing_listings_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateListingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/listings/{item_id}": {
+      "get": {
+        "tags": [
+          "listings"
+        ],
+        "summary": "Get Listing",
+        "description": "Return the LISTING facet for an Item (Requirement 3.3).\n\nUnknown Item -> 404; an existing Item with no listing -> 404 (no listing).",
+        "operationId": "get_listing_listings__item_id__get",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "listings"
+        ],
+        "summary": "Update Listing",
+        "description": "Apply a partial update to an existing listing (Requirement 3.2).\n\nUnknown Item -> 404; an Item with no listing -> 404.",
+        "operationId": "update_listing_listings__item_id__put",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateListingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "listings"
+        ],
+        "summary": "Delete Listing",
+        "description": "Remove the LISTING facet for an Item (Requirement 3.4). Unknown Item -> 404.",
+        "operationId": "delete_listing_listings__item_id__delete",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/listings/{item_id}/buy": {
+      "post": {
+        "tags": [
+          "listings"
+        ],
+        "summary": "Buy Listing",
+        "description": "Simulated checkout for a listed Item (Requirements 15.5, 18.4).\n\nPayments are simulated in v1: no payment is processed. The purchase requires\nan existing listing (unknown Item or no listing -> 404), transitions the Item\nto SOLD, and emits a SOLD lifecycle event identifying the Item.",
+        "operationId": "buy_listing_listings__item_id__buy_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/marketplace": {
+      "get": {
+        "tags": [
+          "marketplace"
+        ],
+        "summary": "Query Marketplace",
+        "description": "Query listings for marketplace browse, enriched for buyers (Req 3.3, 13).",
+        "operationId": "query_marketplace_marketplace_get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Listing category to browse ('all' for every category)",
+              "title": "Category"
+            },
+            "description": "Listing category to browse ('all' for every category)"
+          },
+          {
+            "name": "geo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional geohash prefix",
+              "title": "Geo"
+            },
+            "description": "Optional geohash prefix"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketplaceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{item_id}/matches": {
+      "get": {
+        "tags": [
+          "matches"
+        ],
+        "summary": "Get Matches",
+        "description": "Return ranked buyer matches for a graded Item (G1).\n\nA 404 is raised for an unknown item (via the item-service lookup). An item\nthat exists but is not yet graded (no GRADE facet or status not GRADED)\nreturns an empty result: ``matches: []``, ``match_count_within_5km: 0``,\n``top_reason: null``. The matching engine ranks candidate buyers and the view\nis rendered with PII-free labels, distances, reasons, and intent tiers.",
+        "operationId": "get_matches_items__item_id__matches_get",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/review/queue": {
+      "get": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Get Review Queue",
+        "description": "Return the prioritized review queue with server-computed tiers (G2).",
+        "operationId": "get_review_queue_review_queue_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewQueueResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/review/{item_id}": {
+      "post": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Review Action",
+        "description": "Confirm or override a pending grade; return the updated Item (G2).\n\nCONFIRM persists the existing grade as confirmed; OVERRIDE builds a grade\nfrom the item's current grade with the label replaced by ``override_grade``\n(carrying confidence/summary/defects/completeness). Both advance the item to\nGRADED. An action on a non-pending item -> 409; an invalid ``override_grade``\n-> 422.",
+        "operationId": "review_action_review__item_id__post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemAggregateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cards/{card_id}/verify": {
+      "get": {
+        "tags": [
+          "cards"
+        ],
+        "summary": "Verify Card",
+        "description": "Publicly verify a Product Health Card (Requirements 12.1-12.4, 16.3).\n\nRecomputes the canonical HMAC-SHA256 signature and compares it against the\nstored signature. Returns ``verified=true`` with the rendered card contents\non a match (Requirement 12.2) or ``verified=false`` with no contents when\ntampered (Requirement 12.3). This route requires no authentication\n(Requirements 12.4, 16.3). An unknown ``card_id`` yields a 404.",
+        "operationId": "verify_card_cards__card_id__verify_get",
+        "parameters": [
+          {
+            "name": "card_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Card Id"
+            }
+          },
+          {
+            "name": "sig",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The signature presented on the public QR link",
+              "title": "Sig"
+            },
+            "description": "The signature presented on the public QR link"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardVerificationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BuyResponse": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "SOLD"
+          },
+          "order_id": {
+            "type": "string",
+            "title": "Order Id"
+          },
+          "simulated": {
+            "type": "boolean",
+            "title": "Simulated",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Simulated checkout: no payment processed. SOLD event emitted."
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "order_id"
+        ],
+        "title": "BuyResponse",
+        "description": "Simulated checkout result (Requirements 15.5, 18.4).\n\nPayments are simulated in v1: no payment is processed. The purchase\ntransitions the Item to SOLD and a SOLD lifecycle event is emitted."
+      },
+      "BuyerMatchModel": {
+        "properties": {
+          "buyer_id": {
+            "type": "string",
+            "title": "Buyer Id"
+          },
+          "display_label": {
+            "type": "string",
+            "title": "Display Label"
+          },
+          "distance_km": {
+            "type": "number",
+            "title": "Distance Km"
+          },
+          "match_score": {
+            "type": "number",
+            "title": "Match Score"
+          },
+          "match_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Match Reasons"
+          },
+          "intent_tier": {
+            "type": "string",
+            "title": "Intent Tier"
+          }
+        },
+        "type": "object",
+        "required": [
+          "buyer_id",
+          "display_label",
+          "distance_km",
+          "match_score",
+          "intent_tier"
+        ],
+        "title": "BuyerMatchModel",
+        "description": "A single ranked buyer match (G1).\n\n``distance_km`` and ``match_score`` are JSON numbers; ``intent_tier`` is one\nof ``HIGH``/``MEDIUM``/``LOW``; ``display_label`` is PII-free."
+      },
+      "CardFacetModel": {
+        "properties": {
+          "card_id": {
+            "type": "string",
+            "title": "Card Id"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "signature": {
+            "type": "string",
+            "title": "Signature"
+          },
+          "qr_target": {
+            "type": "string",
+            "title": "Qr Target"
+          },
+          "graded_at": {
+            "type": "string",
+            "title": "Graded At"
+          },
+          "warranty_stance": {
+            "type": "string",
+            "title": "Warranty Stance"
+          },
+          "annotated_photo_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Annotated Photo Keys"
+          }
+        },
+        "type": "object",
+        "required": [
+          "card_id",
+          "item_id",
+          "signature",
+          "qr_target",
+          "graded_at",
+          "warranty_stance"
+        ],
+        "title": "CardFacetModel",
+        "description": "The CARD facet (Requirement 1.4)."
+      },
+      "CardVerificationResponse": {
+        "properties": {
+          "verified": {
+            "type": "boolean",
+            "title": "Verified"
+          },
+          "card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthCardModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "verified"
+        ],
+        "title": "CardVerificationResponse",
+        "description": "Public verification outcome (Requirements 12.1-12.4, 16.3).\n\n``verified`` is True when the recomputed signature matches the stored\nsignature, and ``card`` then carries the rendered card contents\n(Requirement 12.2). When False the card is *tampered* and ``card`` is\n``None`` so altered contents are never surfaced as authentic\n(Requirement 12.3). ``reason`` is a short human-readable explanation."
+      },
+      "CompletenessModel": {
+        "properties": {
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          },
+          "missing_components": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Components"
+          }
+        },
+        "type": "object",
+        "required": [
+          "complete"
+        ],
+        "title": "CompletenessModel"
+      },
+      "CreateItemRequest": {
+        "properties": {
+          "context_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Source",
+            "description": "'order_scan' or 'manual'"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "age_months": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Months"
+          },
+          "order_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Id",
+            "description": "Scanned order reference (order-scan context)"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "CreateItemRequest",
+        "description": "Create-item body (Requirements 1.1, 1.2, 1.3).\n\nAll fields are optional at the transport layer so the *service* performs the\nauthoritative required-field validation and names the missing field in its\nerror (Requirement 1.3, mapped to 422). ``order_id`` is required only for an\norder-scan context; the service enforces that per context shape."
+      },
+      "CreateListingRequest": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Price"
+          },
+          "geohash5": {
+            "type": "string",
+            "title": "Geohash5"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "category",
+          "price",
+          "geohash5"
+        ],
+        "title": "CreateListingRequest",
+        "description": "Create-listing body (Requirements 3.1, 3.5).\n\nListing an Item requires it to be graded; the service rejects an ungraded\nItem with a 409 grade-required error."
+      },
+      "DecisionFacetModel": {
+        "properties": {
+          "disposition": {
+            "type": "string",
+            "title": "Disposition"
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Price"
+          },
+          "value": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Value"
+          },
+          "cost": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cost"
+          },
+          "margin": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Margin"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          }
+        },
+        "type": "object",
+        "required": [
+          "disposition",
+          "price",
+          "value",
+          "cost",
+          "margin",
+          "rationale"
+        ],
+        "title": "DecisionFacetModel",
+        "description": "The DECISION facet (Requirement 1.4, 10.7)."
+      },
+      "DefectModel": {
+        "properties": {
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location",
+          "severity"
+        ],
+        "title": "DefectModel"
+      },
+      "GradeAcceptedResponse": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "title": "Idempotency Key"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "enqueued"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "idempotency_key"
+        ],
+        "title": "GradeAcceptedResponse",
+        "description": "202 Accepted body for an enqueued grading submission (Requirement 7.1)."
+      },
+      "GradeFacetModel": {
+        "properties": {
+          "grade": {
+            "type": "string",
+            "title": "Grade"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "defects": {
+            "items": {
+              "$ref": "#/components/schemas/DefectModel"
+            },
+            "type": "array",
+            "title": "Defects"
+          },
+          "completeness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompletenessModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "idem_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idem Key"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "title": "Confirmed",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "grade",
+          "confidence",
+          "summary"
+        ],
+        "title": "GradeFacetModel",
+        "description": "The GRADE facet (Requirement 1.4)."
+      },
+      "GradeRequest": {
+        "properties": {
+          "photo_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Photo Keys",
+            "description": "Uploaded photo object keys"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key",
+            "description": "Optional explicit idempotency key override"
+          }
+        },
+        "type": "object",
+        "title": "GradeRequest",
+        "description": "Grade-submission body (Requirements 7.1, 7.2).\n\n``photo_keys`` are the uploaded S3 object keys for the photo set; the\nIdempotency-Key is derived from the item id and the photo-set hash unless an\nexplicit ``idempotency_key`` override is supplied."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthCardModel": {
+        "properties": {
+          "card_id": {
+            "type": "string",
+            "title": "Card Id"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "grade": {
+            "type": "string",
+            "title": "Grade"
+          },
+          "graded_at": {
+            "type": "string",
+            "title": "Graded At"
+          },
+          "defect_summary": {
+            "type": "string",
+            "title": "Defect Summary"
+          },
+          "warranty_stance": {
+            "type": "string",
+            "title": "Warranty Stance"
+          },
+          "annotated_photo_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Annotated Photo Keys"
+          },
+          "signature": {
+            "type": "string",
+            "title": "Signature"
+          },
+          "qr_target": {
+            "type": "string",
+            "title": "Qr Target"
+          }
+        },
+        "type": "object",
+        "required": [
+          "card_id",
+          "item_id",
+          "grade",
+          "graded_at",
+          "defect_summary",
+          "warranty_stance",
+          "signature",
+          "qr_target"
+        ],
+        "title": "HealthCardModel",
+        "description": "The verified contents of a Product Health Card (Requirements 11.1, 12.2).\n\nReturned only when verification succeeds; the grade is carried as its\nhuman-readable label and money/identifier fields are plain strings, so the\npublic, unauthenticated payload exposes exactly the rendered card contents."
+      },
+      "ItemAggregateResponse": {
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/ItemMetaResponse"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GradeFacetModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CardFacetModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionFacetModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "listing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ListingFacetModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "meta"
+        ],
+        "title": "ItemAggregateResponse",
+        "description": "An Item's status plus exactly its persisted facets (Requirement 1.4)."
+      },
+      "ItemMetaResponse": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "age_months": {
+            "type": "integer",
+            "title": "Age Months"
+          },
+          "context_source": {
+            "type": "string",
+            "title": "Context Source"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "context_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Ref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "status",
+          "category",
+          "age_months",
+          "context_source",
+          "created_at"
+        ],
+        "title": "ItemMetaResponse",
+        "description": "The META facet of an Item returned on create and within an aggregate."
+      },
+      "ListingFacetModel": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Price"
+          },
+          "geohash5": {
+            "type": "string",
+            "title": "Geohash5"
+          },
+          "listed_at": {
+            "type": "string",
+            "title": "Listed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "status",
+          "category",
+          "price",
+          "geohash5",
+          "listed_at"
+        ],
+        "title": "ListingFacetModel",
+        "description": "The LISTING facet (Requirement 1.4, 3.x)."
+      },
+      "ListingResponse": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Price"
+          },
+          "geohash5": {
+            "type": "string",
+            "title": "Geohash5"
+          },
+          "listed_at": {
+            "type": "string",
+            "title": "Listed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "status",
+          "category",
+          "price",
+          "geohash5",
+          "listed_at"
+        ],
+        "title": "ListingResponse",
+        "description": "A listing returned by listing CRUD (Requirement 3.x)."
+      },
+      "MarketListingModel": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "listing_id": {
+            "type": "string",
+            "title": "Listing Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Price"
+          },
+          "price_new": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Price New"
+          },
+          "geohash5": {
+            "type": "string",
+            "title": "Geohash5"
+          },
+          "listed_at": {
+            "type": "string",
+            "title": "Listed At"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade"
+          },
+          "distance_km": {
+            "type": "number",
+            "title": "Distance Km"
+          },
+          "health_card_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Health Card Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "thumb_key": {
+            "type": "string",
+            "title": "Thumb Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "listing_id",
+          "status",
+          "category",
+          "price",
+          "price_new",
+          "geohash5",
+          "listed_at",
+          "distance_km",
+          "title",
+          "thumb_key"
+        ],
+        "title": "MarketListingModel",
+        "description": "A marketplace listing enriched for buyer browse (G3 + G4).\n\nExtends the base LISTING facet fields (``item_id``, ``status``,\n``category``, ``price``, ``geohash5``, ``listed_at``) with the buyer-facing\nfields the marketplace tiles need:\n\n* ``listing_id`` \u2014 stable ``lst_<item_id>`` identifier;\n* ``grade`` \u2014 the item's GRADE facet label, or ``None`` if ungraded;\n* ``distance_km`` \u2014 haversine distance from the query ``geo`` to the\n  listing's geohash, or a deterministic seeded distance when no ``geo`` is\n  supplied (treated as authoritative by the frontend);\n* ``price_new`` \u2014 demo-derived catalog MRP (``round(price * 1.5, 2)``);\n* ``health_card_id`` \u2014 the item's CARD facet id, or ``None``;\n* ``title`` \u2014 best-effort title (the category);\n* ``thumb_key`` \u2014 a stable glyph id (the category string)."
+      },
+      "MarketplaceResponse": {
+        "properties": {
+          "listings": {
+            "items": {
+              "$ref": "#/components/schemas/MarketListingModel"
+            },
+            "type": "array",
+            "title": "Listings"
+          }
+        },
+        "type": "object",
+        "title": "MarketplaceResponse",
+        "description": "Marketplace query result (Requirement 3.3, 13; extended by G3/G4)."
+      },
+      "MatchesResponse": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/BuyerMatchModel"
+            },
+            "type": "array",
+            "title": "Matches"
+          },
+          "match_count_within_5km": {
+            "type": "integer",
+            "title": "Match Count Within 5Km",
+            "default": 0
+          },
+          "top_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "generated_at"
+        ],
+        "title": "MatchesResponse",
+        "description": "Ranked buyer matches for a graded Item (G1).\n\n``generated_at`` is the ISO-8601 instant the view was produced. An empty\nresult carries ``matches: []``, ``match_count_within_5km: 0``, and\n``top_reason: null``."
+      },
+      "PresignRequest": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Number of photo slots (2-4)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count"
+        ],
+        "title": "PresignRequest",
+        "description": "Presigned-upload request (Requirement 2.1, 2.4).\n\n``count`` is the number of photo slots; the service rejects counts outside\nthe inclusive 2-4 range with a 422 range error."
+      },
+      "PresignResponse": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "urls": {
+            "items": {
+              "$ref": "#/components/schemas/PresignedUrlModel"
+            },
+            "type": "array",
+            "title": "Urls"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "urls"
+        ],
+        "title": "PresignResponse",
+        "description": "The presigned upload targets for a grading submission."
+      },
+      "PresignedUrlModel": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method",
+            "default": "PUT"
+          },
+          "headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Headers"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In",
+            "default": 300
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "PresignedUrlModel",
+        "description": "A single presigned S3 PUT target (Requirement 2.1, 2.2)."
+      },
+      "ReviewActionRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "override_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Grade"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "ReviewActionRequest",
+        "description": "A reviewer confirm/override action (G2).\n\n``action`` is ``CONFIRM`` or ``OVERRIDE``. When ``OVERRIDE``,\n``override_grade`` must be a valid grade label; when ``CONFIRM`` it is\n``null``."
+      },
+      "ReviewQueueItemModel": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "ai_grade": {
+            "type": "string",
+            "title": "Ai Grade"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "est_value": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Est Value"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority"
+          },
+          "photo_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Photo Keys"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "title",
+          "ai_grade",
+          "confidence",
+          "est_value",
+          "priority",
+          "created_at"
+        ],
+        "title": "ReviewQueueItemModel",
+        "description": "A single review-queue item (G2).\n\n``confidence`` is a JSON number; ``est_value`` is a money string;\n``priority`` is the server-computed tier (HIGH/MEDIUM/LOW)."
+      },
+      "ReviewQueueResponse": {
+        "properties": {
+          "queue": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewQueueItemModel"
+            },
+            "type": "array",
+            "title": "Queue"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "ReviewQueueResponse",
+        "description": "The prioritized review queue (G2)."
+      },
+      "RouteDecisionResponse": {
+        "properties": {
+          "disposition": {
+            "type": "string",
+            "title": "Disposition"
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Price"
+          },
+          "value": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Value"
+          },
+          "cost": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cost"
+          },
+          "margin": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Margin"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "price_new": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price New"
+          }
+        },
+        "type": "object",
+        "required": [
+          "disposition",
+          "price",
+          "value",
+          "cost",
+          "margin",
+          "rationale"
+        ],
+        "title": "RouteDecisionResponse",
+        "description": "The routing decision returned by ``POST /items/{id}/route`` (Req 10.7)."
+      },
+      "RouteRequest": {
+        "properties": {
+          "geohash5": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geohash5"
+          }
+        },
+        "type": "object",
+        "title": "RouteRequest",
+        "description": "Routing request (Requirement 10).\n\n``geohash5`` optionally attaches a neighborhood demand signal to the\ndecision context; it never changes the margin-based selection."
+      },
+      "UpdateListingRequest": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "geohash5": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geohash5"
+          }
+        },
+        "type": "object",
+        "title": "UpdateListingRequest",
+        "description": "Partial listing update (Requirement 3.2). Unset fields are unchanged."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

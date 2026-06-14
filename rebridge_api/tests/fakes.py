@@ -15,11 +15,14 @@ import hmac
 from dataclasses import replace
 
 from rebridge_data.interfaces import (
+    BuyerNotifier,
     CardSigner,
     EventPublisher,
     ItemRepository,
     ObjectStore,
     QueueClient,
+    ReviewQueueRepository,
+    SecondChanceShelf,
 )
 from rebridge_data.models import (
     CardRecord,
@@ -33,6 +36,7 @@ from rebridge_data.models import (
     ListingPatch,
     ListingRecord,
     PresignedUrl,
+    ReviewQueueEntry,
 )
 
 __all__ = [
@@ -41,6 +45,9 @@ __all__ = [
     "FakeQueueClient",
     "FakeEventPublisher",
     "FakeCardSigner",
+    "FakeReviewQueueRepository",
+    "FakeBuyerNotifier",
+    "FakeSecondChanceShelf",
 ]
 
 
@@ -199,3 +206,53 @@ class FakeCardSigner(CardSigner):
 
     def verify(self, payload: bytes, signature: str) -> bool:
         return hmac.compare_digest(self.sign(payload), signature)
+
+
+class FakeReviewQueueRepository(ReviewQueueRepository):
+    """In-memory prioritized review queue (Requirement 14.1)."""
+
+    def __init__(self) -> None:
+        self._entries: dict[str, ReviewQueueEntry] = {}
+
+    def enqueue(self, entry: ReviewQueueEntry) -> None:
+        self._entries[entry.item_id] = copy.deepcopy(entry)
+
+    def list_pending(self, limit: int) -> list[ReviewQueueEntry]:
+        ordered = sorted(
+            self._entries.values(),
+            key=lambda e: e.priority,
+            reverse=True,
+        )
+        return [copy.deepcopy(e) for e in ordered[:limit]]
+
+    def get(self, item_id: str) -> ReviewQueueEntry | None:
+        return copy.deepcopy(self._entries.get(item_id))
+
+    def resolve(self, item_id: str) -> None:
+        self._entries.pop(item_id, None)
+
+
+class FakeBuyerNotifier(BuyerNotifier):
+    """Records the (buyer_id, item_id) pushes the demand engine makes."""
+
+    def __init__(self) -> None:
+        self.notifications: list[tuple[str, str]] = []
+
+    def notify(self, buyer_id: str, item_id: str) -> None:
+        self.notifications.append((buyer_id, item_id))
+
+    def buyers_for(self, item_id: str) -> list[str]:
+        return [b for b, i in self.notifications if i == item_id]
+
+
+class FakeSecondChanceShelf(SecondChanceShelf):
+    """Records idempotent Second-Chance shelf placements by item id."""
+
+    def __init__(self) -> None:
+        self.upsert_counts: dict[str, int] = {}
+
+    def upsert(self, item_id: str) -> None:
+        self.upsert_counts[item_id] = self.upsert_counts.get(item_id, 0) + 1
+
+    def __contains__(self, item_id: object) -> bool:
+        return item_id in self.upsert_counts

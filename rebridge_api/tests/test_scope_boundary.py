@@ -222,15 +222,19 @@ def test_wiring_source_constructs_only_the_seeded_demand_source():
 
     assert "SeededBuyerPersonaRepository" in constructed
 
-    # A demand-source *concrete* is a class, so only class-like (PascalCase)
-    # constructions count -- this ignores in-scope helpers such as the routing
-    # agent's ``DemandProbe.from_buyer_repository(...)`` factory, which consumes
-    # the seeded repo rather than introducing a new demand source.
+    # A demand *data source* is a BuyerPersonaRepository concrete. Flag only
+    # PascalCase constructions that look like a persona/buyer *repository*, so
+    # an alternate or live demand source is caught -- but the demand-matching
+    # side-effect gateways (EventBridgeBuyerNotifier / EventBridgeSecondChanceShelf),
+    # which consume rather than source buyer data, are correctly ignored.
     demand_like = {
         name
         for name in constructed
         if name[:1].isupper()
-        and ("buyer" in name.lower() or "persona" in name.lower())
+        and (
+            "persona" in name.lower()
+            or ("buyer" in name.lower() and "repositor" in name.lower())
+        )
         and name != "SeededBuyerPersonaRepository"
     }
     assert demand_like == set(), f"unexpected demand source(s) constructed: {demand_like}"

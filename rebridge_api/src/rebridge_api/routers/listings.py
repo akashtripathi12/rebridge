@@ -59,6 +59,18 @@ def create_listing(
     listing = services.item_service.create_listing(body.item_id, **kwargs)
     services.item_repo.update_status(body.item_id, ItemStatus.LISTED)
     services.eventing.emit_listed(body.item_id)
+
+    # Connect Engine B: on the LISTED transition, run demand matching so the
+    # top-N buyers are notified, the Item is placed on the Second-Chance shelf,
+    # and a MATCHED event is emitted (Requirements 13.5, 15.4). Skipped cleanly
+    # if no matching engine is wired into the container.
+    if services.matching is not None:
+        services.matching.match(
+            item_id=body.item_id,
+            geo=listing.geohash5,
+            category=listing.category,
+        )
+
     return ListingResponse.from_record(listing)
 
 

@@ -34,6 +34,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, replace
+from decimal import Decimal
 
 from rebridge_data.interfaces import ItemRepository, ReviewQueueRepository
 from rebridge_data.models import GradeRecord, ItemStatus, ReviewQueueEntry
@@ -45,11 +46,20 @@ __all__ = [
     "TrainingSignal",
     "TrainingSignalSink",
     "InMemoryTrainingSignalSink",
+    "ReviewQueueItemView",
     "ReviewConsoleService",
 ]
 
 # Default page size when a caller does not specify one for ``list_pending``.
 DEFAULT_QUEUE_LIMIT = 50
+
+# Priority-tier cutoffs applied to the queue entry's priority score
+# (value * (1 - confidence)). Documented, configurable module constants so the
+# demo data lands as intended (e.g. 1900*0.36=684 -> HIGH, 240*0.23=55 ->
+# MEDIUM). A score at or above HIGH is HIGH; at or above MEDIUM is MEDIUM; else
+# LOW.
+PRIORITY_HIGH_CUTOFF: float = 300.0
+PRIORITY_MEDIUM_CUTOFF: float = 50.0
 
 
 class ReviewConsoleError(Exception):
@@ -118,6 +128,26 @@ class InMemoryTrainingSignalSink(TrainingSignalSink):
         self.signals.append(signal)
 
 
+@dataclass(frozen=True)
+class ReviewQueueItemView:
+    """A review-queue entry joined with item meta for the queue API (G2).
+
+    ``est_value`` carries the queue entry's value (rendered as a money string at
+    the transport boundary); ``priority`` is the server-computed tier
+    (HIGH/MEDIUM/LOW); ``photo_keys`` is synthesized for the demo; ``title`` and
+    ``created_at`` come from the item's META facet.
+    """
+
+    item_id: str
+    title: str
+    ai_grade: str
+    confidence: float
+    est_value: Decimal
+    priority: str
+    photo_keys: tuple[str, ...]
+    created_at: str
+
+
 class ReviewConsoleService:
     """Lists the Review_Queue and applies confirm/override actions.
 
@@ -158,6 +188,51 @@ class ReviewConsoleService:
         if limit < 0:
             raise ValueError(f"limit must be non-negative, got {limit}")
         return self._queue.list_pending(limit)
+
+    def list_pending_view(
+        self, limit: int = DEFAULT_QUEUE_LIMIT
+    ) -> list[ReviewQueueItemView]:
+        """Return pending entries joined with item meta for the queue API (G2).
+
+        Surfaces :meth:`list_pending` (already priority-desc, Requirement 14.1)
+        and, for each entry, joins the item's META facet to fill ``title`` and
+        ``created_at``, computes the server-side priority tier from the entry's
+        priority score (``value * (1 - confidence)``), and synthesizes a demo
+        ``photo_keys`` list. ``ai_grade``/``confidence``/``est_value`` come from
+        the queue entry. The descending priority ordering is preserved.
+        """
+
+        entries = self.list_pending(limit)
+        views: list[ReviewQueueItemView] = []
+        for entry in entries:
+            aggregate = self._items.get_item(entry.item_id)
+            meta = aggregate.meta if aggregate is not None else None
+            grade = entry.grade if entry.grade is not None else self._items.get_grade(
+                entry.item_id
+            )
+            views.append(
+                ReviewQueueItemView(
+                    item_id=entry.item_id,
+                    title=meta.category if meta is not None else "",
+                    ai_grade=grade.grade if grade is not None else "",
+                    confidence=entry.confidence,
+                    est_value=entry.value,
+                    priority=self._priority_tier(entry.priority),
+                    photo_keys=(f"items/{entry.item_id}/photo-1",),
+                    created_at=meta.created_at if meta is not None else "",
+                )
+            )
+        return views
+
+    @staticmethod
+    def _priority_tier(priority_score: float) -> str:
+        """Map a priority score (value x uncertainty) to a HIGH/MEDIUM/LOW tier."""
+
+        if priority_score >= PRIORITY_HIGH_CUTOFF:
+            return "HIGH"
+        if priority_score >= PRIORITY_MEDIUM_CUTOFF:
+            return "MEDIUM"
+        return "LOW"
 
     def confirm(self, item_id: str) -> GradeRecord:
         """Confirm the pending grade for ``item_id`` (Requirement 14.2).

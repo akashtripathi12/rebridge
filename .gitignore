@@ -25,3 +25,13 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Node / Next.js frontend
+node_modules/
+.next/
+out/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.eslintcache
+frontend/.env.local

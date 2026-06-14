@@ -52,10 +52,16 @@ __all__ = [
     "CreateListingRequest",
     "UpdateListingRequest",
     "ListingResponse",
+    "MarketListingModel",
     "MarketplaceResponse",
     "BuyResponse",
     "HealthCardModel",
     "CardVerificationResponse",
+    "BuyerMatchModel",
+    "MatchesResponse",
+    "ReviewQueueItemModel",
+    "ReviewQueueResponse",
+    "ReviewActionRequest",
     "ErrorResponse",
 ]
 
@@ -347,6 +353,10 @@ class RouteDecisionResponse(BaseModel):
     cost: Decimal
     margin: Decimal
     rationale: str
+    # Demo-derived catalog MRP (original "price when new"); see MarketListingModel
+    # (G4). Optional so the field is additive and the contract stays backward
+    # compatible.
+    price_new: Decimal | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -389,10 +399,71 @@ class ListingResponse(ListingFacetModel):
     """A listing returned by listing CRUD (Requirement 3.x)."""
 
 
-class MarketplaceResponse(BaseModel):
-    """Marketplace query result (Requirement 3.3, 13)."""
+class MarketListingModel(BaseModel):
+    """A marketplace listing enriched for buyer browse (G3 + G4).
 
-    listings: list[ListingFacetModel] = Field(default_factory=list)
+    Extends the base LISTING facet fields (``item_id``, ``status``,
+    ``category``, ``price``, ``geohash5``, ``listed_at``) with the buyer-facing
+    fields the marketplace tiles need:
+
+    * ``listing_id`` — stable ``lst_<item_id>`` identifier;
+    * ``grade`` — the item's GRADE facet label, or ``None`` if ungraded;
+    * ``distance_km`` — haversine distance from the query ``geo`` to the
+      listing's geohash, or a deterministic seeded distance when no ``geo`` is
+      supplied (treated as authoritative by the frontend);
+    * ``price_new`` — demo-derived catalog MRP (``round(price * 1.5, 2)``);
+    * ``health_card_id`` — the item's CARD facet id, or ``None``;
+    * ``title`` — best-effort title (the category);
+    * ``thumb_key`` — a stable glyph id (the category string).
+    """
+
+    item_id: str
+    listing_id: str
+    status: str
+    category: str
+    price: Decimal
+    price_new: Decimal
+    geohash5: str
+    listed_at: str
+    grade: str | None = None
+    distance_km: float
+    health_card_id: str | None = None
+    title: str
+    thumb_key: str
+
+    @classmethod
+    def from_record(
+        cls,
+        rec: ListingRecord,
+        *,
+        grade: str | None,
+        health_card_id: str | None,
+        distance_km: float,
+    ) -> "MarketListingModel":
+        """Build the enriched marketplace listing from a record + joined facets."""
+
+        price_new = (rec.price * Decimal("1.5")).quantize(Decimal("0.01"))
+        return cls(
+            item_id=rec.item_id,
+            listing_id=f"lst_{rec.item_id}",
+            status=rec.status,
+            category=rec.category,
+            price=rec.price,
+            price_new=price_new,
+            geohash5=rec.geohash5,
+            listed_at=rec.listed_at,
+            grade=grade,
+            distance_km=distance_km,
+            health_card_id=health_card_id,
+            title=rec.category,
+            thumb_key=rec.category,
+        )
+
+
+class MarketplaceResponse(BaseModel):
+    """Marketplace query result (Requirement 3.3, 13; extended by G3/G4)."""
+
+    listings: list[MarketListingModel] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -495,3 +566,118 @@ class CardVerificationResponse(BaseModel):
             ),
             reason=result.reason,
         )
+
+
+# ---------------------------------------------------------------------------
+# Demand matches (G1: GET /items/{item_id}/matches)
+# ---------------------------------------------------------------------------
+
+
+class BuyerMatchModel(BaseModel):
+    """A single ranked buyer match (G1).
+
+    ``distance_km`` and ``match_score`` are JSON numbers; ``intent_tier`` is one
+    of ``HIGH``/``MEDIUM``/``LOW``; ``display_label`` is PII-free.
+    """
+
+    buyer_id: str
+    display_label: str
+    distance_km: float
+    match_score: float
+    match_reasons: list[str] = Field(default_factory=list)
+    intent_tier: str
+
+    @classmethod
+    def from_match(cls, match: Any) -> "BuyerMatchModel":
+        return cls(
+            buyer_id=match.buyer_id,
+            display_label=match.display_label,
+            distance_km=match.distance_km,
+            match_score=match.match_score,
+            match_reasons=list(match.match_reasons),
+            intent_tier=match.intent_tier,
+        )
+
+
+class MatchesResponse(BaseModel):
+    """Ranked buyer matches for a graded Item (G1).
+
+    ``generated_at`` is the ISO-8601 instant the view was produced. An empty
+    result carries ``matches: []``, ``match_count_within_5km: 0``, and
+    ``top_reason: null``.
+    """
+
+    item_id: str
+    generated_at: str
+    matches: list[BuyerMatchModel] = Field(default_factory=list)
+    match_count_within_5km: int = 0
+    top_reason: str | None = None
+
+    @classmethod
+    def from_view(cls, view: Any, generated_at: str) -> "MatchesResponse":
+        return cls(
+            item_id=view.item_id,
+            generated_at=generated_at,
+            matches=[BuyerMatchModel.from_match(m) for m in view.matches],
+            match_count_within_5km=view.match_count_within_5km,
+            top_reason=view.top_reason,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Review queue (G2: GET /review/queue, POST /review/{item_id})
+# ---------------------------------------------------------------------------
+
+
+class ReviewQueueItemModel(BaseModel):
+    """A single review-queue item (G2).
+
+    ``confidence`` is a JSON number; ``est_value`` is a money string;
+    ``priority`` is the server-computed tier (HIGH/MEDIUM/LOW).
+    """
+
+    item_id: str
+    title: str
+    ai_grade: str
+    confidence: float
+    est_value: Decimal
+    priority: str
+    photo_keys: list[str] = Field(default_factory=list)
+    created_at: str
+
+    @classmethod
+    def from_view(cls, view: Any) -> "ReviewQueueItemModel":
+        return cls(
+            item_id=view.item_id,
+            title=view.title,
+            ai_grade=view.ai_grade,
+            confidence=view.confidence,
+            est_value=view.est_value,
+            priority=view.priority,
+            photo_keys=list(view.photo_keys),
+            created_at=view.created_at,
+        )
+
+
+class ReviewQueueResponse(BaseModel):
+    """The prioritized review queue (G2)."""
+
+    queue: list[ReviewQueueItemModel] = Field(default_factory=list)
+    total: int = 0
+
+    @classmethod
+    def from_views(cls, views: list[Any]) -> "ReviewQueueResponse":
+        items = [ReviewQueueItemModel.from_view(v) for v in views]
+        return cls(queue=items, total=len(items))
+
+
+class ReviewActionRequest(BaseModel):
+    """A reviewer confirm/override action (G2).
+
+    ``action`` is ``CONFIRM`` or ``OVERRIDE``. When ``OVERRIDE``,
+    ``override_grade`` must be a valid grade label; when ``CONFIRM`` it is
+    ``null``.
+    """
+
+    action: str
+    override_grade: str | None = None

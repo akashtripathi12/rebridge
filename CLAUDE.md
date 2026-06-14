@@ -141,3 +141,57 @@ app constructible offline; AWS resource ids must be set for deployment.
 The authoritative spec lives in `.kiro/specs/rebridge-backend/`
 (`requirements.md`, `design.md`, `tasks.md`). The design's Correctness
 Properties section is the source of truth for the property tests.
+
+---
+
+## What was added / fixed after the initial implementation
+
+### Frontend (`frontend/`)
+A full Next.js 14 / TypeScript / Tailwind frontend (App Router) was delivered and lives at the repo root. It has its own `package.json`, `tsconfig.json`, Playwright e2e suite, and `.env.example`. Run with:
+```bash
+cd frontend && npm run dev   # http://localhost:3000
+```
+All routes default to **mock** services. Flip individual `NEXT_PUBLIC_*_LIVE` env flags in `frontend/.env.local` to point at the live backend (see `documentation/FOR_BACKEND.md`).
+
+Key frontend routes: `/returns` (capture + grade), `/reveal` (grading reveal), `/scanner` (3D product scanner), `/market` (buyer marketplace), `/card/[id]` (Health Card verify), `/notifications`, `/review` (review console), `/` (hero), `/styleguide`.
+
+### G1–G4 backend endpoints (added)
+The frontend contract specified four endpoints the original backend didn't expose:
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /items/{id}/matches` | Ranked buyer matches for a graded item (Engine B read view) |
+| `GET /review/queue` | Prioritized review queue with server-computed priority tiers |
+| `POST /review/{item_id}` | Confirm or override a pending grade |
+| `GET /marketplace` (extended) | Now also returns `grade`, `distance_km`, `price_new`, `health_card_id`, `title`, `thumb_key`, `listing_id` per listing; accepts `category=all` |
+
+New routers: `routers/matches.py`, `routers/review.py`. `routers/marketplace.py` extended. See `openapi.json` at the repo root for the full machine-readable contract.
+
+### Four runtime connection fixes
+These services were fully implemented and tested in isolation but never connected to the runtime:
+
+**Fix 1 — Engine B end-to-end (the main one)**
+`DemandMatchingEngine.match()` (notify buyers + shelf + `MATCHED` event) was never called.
+- Added `rebridge_data/eventbridge_demand_gateways.py`: `EventBridgeBuyerNotifier` and `EventBridgeSecondChanceShelf` — both publish events on the existing EventBridge bus (`BUYER_NOTIFIED` per buyer, `SHELF_UPSERTED` per item). No new infrastructure.
+- Wired into `wiring.py` — demand engine now receives `notifier`, `shelf`, `eventing`.
+- `match()` is now triggered in `routers/listings.py` on listing creation (the design-specified trigger point).
+
+**Fix 2 — `ROUTED` on the async grading path**
+The worker's pipeline called `RoutingAgent.decide()` directly; the agent persists the decision but doesn't emit. `ROUTED` was only emitted on the explicit `POST /items/{id}/route` endpoint.
+- Added `rebridge_api/routing_adapter.py`: `EventEmittingRouter` wraps the agent, calls `decide()` then `emit_routed()`.
+- `wiring.py` `build_worker` now uses `EventEmittingRouter` instead of `CallableRouter`.
+
+**Fix 3 — `GRADED` after human review**
+`ReviewConsoleService.confirm/override` set status `GRADED` but never emitted the `GRADED` event.
+- `routers/review.py` now calls `services.eventing.emit_graded(item_id)` after the action.
+
+**Fix 4 — Composition-level regression tests**
+Added `rebridge_api/tests/test_event_wiring.py` (4 tests) and `test_routing_adapter.py` — these run through the composed harness so "implemented but never connected" can't silently pass a green suite again.
+
+### Test counts after all changes
+| Package | Tests |
+|---|---|
+| `rebridge_data` | 134 |
+| `rebridge_service` | 342 |
+| `rebridge_api` | 110 |
+| **Total** | **586** |

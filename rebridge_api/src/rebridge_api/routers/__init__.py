@@ -6,6 +6,6 @@ package lets later tasks (the public verify route in 17.4, etc.) add modules and
 attach them to the same app without editing existing routers.
 """
 
-from rebridge_api.routers import items, listings, marketplace
+from rebridge_api.routers import items, listings, marketplace, matches, review
 
-__all__ = ["items", "listings", "marketplace"]
+__all__ = ["items", "listings", "marketplace", "matches", "review"]

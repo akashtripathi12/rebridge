@@ -90,9 +90,17 @@ from rebridge_data.dynamo_review_queue_repository import (  # noqa: E402
 
 __all__.append("DynamoReviewQueueRepository")
 
-from rebridge_data.geohash import encode_geohash5  # noqa: E402
+from rebridge_data.geohash import (  # noqa: E402
+    decode_geohash,
+    encode_geohash5,
+    geohash_distance_km,
+    seeded_distance_km,
+)
 
 __all__.append("encode_geohash5")
+__all__.append("decode_geohash")
+__all__.append("geohash_distance_km")
+__all__.append("seeded_distance_km")
 
 from rebridge_data.eventbridge_publisher import EventBridgePublisher  # noqa: E402
 
@@ -111,3 +119,11 @@ from rebridge_data.seeded_buyer_persona_repository import (  # noqa: E402
 )
 
 __all__.append("SeededBuyerPersonaRepository")
+
+from rebridge_data.eventbridge_demand_gateways import (  # noqa: E402
+    EventBridgeBuyerNotifier,
+    EventBridgeSecondChanceShelf,
+)
+
+__all__.append("EventBridgeBuyerNotifier")
+__all__.append("EventBridgeSecondChanceShelf")

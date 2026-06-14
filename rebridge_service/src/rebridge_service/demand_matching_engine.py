@@ -37,6 +37,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from rebridge_data.geohash import geohash_distance_km, seeded_distance_km
 from rebridge_data.interfaces import (
     BuyerNotifier,
     BuyerPersonaRepository,
@@ -51,6 +52,8 @@ __all__ = [
     "MatchWeights",
     "ScoredCandidate",
     "MatchResult",
+    "BuyerMatch",
+    "MatchView",
     "DemandMatchingEngine",
 ]
 
@@ -148,6 +151,79 @@ class MatchResult:
     ranking: tuple[ScoredCandidate, ...]
     notified: tuple[ScoredCandidate, ...]
     event: LifecycleEvent
+
+
+# -- match-view derivation constants (G1: GET /items/{id}/matches) -----------
+
+# Intent-tier cutoffs applied to the (clamped, rounded) match score. A score at
+# or above HIGH is HIGH; at or above MEDIUM is MEDIUM; otherwise LOW.
+INTENT_TIER_HIGH_CUTOFF: float = 0.80
+INTENT_TIER_MEDIUM_CUTOFF: float = 0.60
+
+# Default radius (km) used to count nearby matches (match_count_within_5km).
+DEFAULT_MATCH_RADIUS_KM: float = 5.0
+
+# Human-readable, PII-free reason text keyed by persona_type. Every persona type
+# maps to exactly one reason, guaranteeing at least one reason per match.
+PERSONA_TYPE_REASONS: dict[str, str] = {
+    "deal_seeker": "deal-seeker",
+    "price_balker": "price-sensitive shopper nearby",
+    "collector": "collects this category",
+    "gifter": "shopping for a gift",
+    "browser": "browsing this category",
+}
+
+# Reason emitted when the listed Item's category is one of a candidate's
+# wishlist/cart interests (Requirement 13.1 signal).
+WISHLIST_REASON: str = "wishlisted this product"
+
+# Fallback reason for a persona_type not present in PERSONA_TYPE_REASONS, so the
+# "always at least one reason" guarantee holds for any seeded data.
+FALLBACK_REASON: str = "category match"
+
+
+def _clamp01(value: float) -> float:
+    """Clamp ``value`` into the inclusive ``[0.0, 1.0]`` range."""
+
+    if value < 0.0:
+        return 0.0
+    if value > 1.0:
+        return 1.0
+    return value
+
+
+@dataclass(frozen=True)
+class BuyerMatch:
+    """A single ranked buyer rendered for the matches API (G1).
+
+    ``display_label`` is PII-free ("Buyer N km away"); ``match_score`` is the
+    candidate score clamped to ``[0, 1]`` and rounded to two decimals;
+    ``match_reasons`` always carries at least one reason; ``intent_tier`` is one
+    of ``HIGH``/``MEDIUM``/``LOW`` derived from ``match_score``.
+    """
+
+    buyer_id: str
+    display_label: str
+    distance_km: float
+    match_score: float
+    match_reasons: tuple[str, ...]
+    intent_tier: str
+
+
+@dataclass(frozen=True)
+class MatchView:
+    """The full matches result for an Item (G1: GET /items/{id}/matches).
+
+    ``matches`` is the ranked list of :class:`BuyerMatch` (descending score).
+    ``match_count_within_5km`` counts matches whose ``distance_km`` is within the
+    radius; ``top_reason`` is the first reason of the top match, or ``None`` when
+    there are no matches.
+    """
+
+    item_id: str
+    matches: tuple[BuyerMatch, ...]
+    match_count_within_5km: int
+    top_reason: str | None
 
 
 def _common_prefix_len(a: str, b: str) -> int:
@@ -334,6 +410,95 @@ class DemandMatchingEngine:
         # repository order, making the result a deterministic permutation.
         scored.sort(key=lambda c: c.score, reverse=True)
         return scored
+
+    # -- match view for the matches API (G1) ------------------------------
+    def matches_for(
+        self,
+        item_id: str,
+        geo: str,
+        category: str,
+        radius_km: float = DEFAULT_MATCH_RADIUS_KM,
+    ) -> MatchView:
+        """Build the ranked buyer-match view for ``item_id`` (G1).
+
+        Ranks candidate buyers for ``(geo, category)`` via :meth:`rank`, then
+        maps each :class:`ScoredCandidate` to a PII-free :class:`BuyerMatch`:
+
+        * ``distance_km`` is the haversine distance between ``geo`` and the
+          persona's geohash when ``geo`` is non-empty, else a deterministic
+          seeded distance derived from a stable hash of the buyer id (so an
+          unlisted Item with no location still yields a stable figure);
+        * ``match_score`` is the candidate score clamped to ``[0, 1]`` and
+          rounded to two decimals;
+        * ``match_reasons`` derives from the persona's category interest and
+          persona type (always at least one reason);
+        * ``intent_tier`` buckets ``match_score`` into HIGH/MEDIUM/LOW.
+
+        ``match_count_within_5km`` counts matches within ``radius_km`` and
+        ``top_reason`` is the first reason of the top match (or ``None`` when no
+        candidates match). Callers (the API layer) attach ``generated_at``.
+        """
+
+        ranking = self.rank(geo, category)
+        matches: list[BuyerMatch] = []
+        for candidate in ranking:
+            persona = candidate.persona
+            distance = self._distance_for(geo, persona)
+            score = round(_clamp01(candidate.score), 2)
+            reasons = self._match_reasons(persona, category)
+            matches.append(
+                BuyerMatch(
+                    buyer_id=persona.buyer_id,
+                    display_label=f"Buyer {round(distance)} km away",
+                    distance_km=distance,
+                    match_score=score,
+                    match_reasons=reasons,
+                    intent_tier=self._intent_tier(score),
+                )
+            )
+
+        within = sum(1 for m in matches if m.distance_km <= radius_km)
+        top_reason = matches[0].match_reasons[0] if matches else None
+        return MatchView(
+            item_id=item_id,
+            matches=tuple(matches),
+            match_count_within_5km=within,
+            top_reason=top_reason,
+        )
+
+    @staticmethod
+    def _distance_for(geo: str, persona: BuyerPersona) -> float:
+        """Distance (km) for a candidate: haversine when geo is known, else seeded."""
+
+        if geo:
+            return geohash_distance_km(geo, persona.geohash5)
+        return seeded_distance_km(persona.buyer_id)
+
+    @staticmethod
+    def _intent_tier(match_score: float) -> str:
+        """Bucket a match score into HIGH/MEDIUM/LOW (G1)."""
+
+        if match_score >= INTENT_TIER_HIGH_CUTOFF:
+            return "HIGH"
+        if match_score >= INTENT_TIER_MEDIUM_CUTOFF:
+            return "MEDIUM"
+        return "LOW"
+
+    @staticmethod
+    def _match_reasons(persona: BuyerPersona, category: str) -> tuple[str, ...]:
+        """Derive PII-free match reasons from category interest + persona type.
+
+        The category-interest signal (if present) leads, followed by the
+        persona-type reason. At least one reason is always produced.
+        """
+
+        reasons: list[str] = []
+        if category in persona.category_interests:
+            reasons.append(WISHLIST_REASON)
+        reasons.append(
+            PERSONA_TYPE_REASONS.get(persona.persona_type, FALLBACK_REASON)
+        )
+        return tuple(reasons)
 
     # -- top-N push, placement, emission (Requirements 13.5, 15.4) --------
     def match(

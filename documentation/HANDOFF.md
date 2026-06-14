@@ -132,3 +132,76 @@ test suite:
 - Spec (authoritative): `.kiro/specs/rebridge-backend/{requirements,design,tasks}.md`
 - Correctness properties: design.md "Correctness Properties" section, mapped 1:1
   to the `test_*_property.py` files.
+
+---
+
+## Update — Frontend, G1–G4 endpoints, and four runtime-connection fixes
+
+### What changed since the initial push
+
+**Test count is now 586** (was 537). All pass.
+
+---
+
+### Frontend at `frontend/`
+A complete Next.js 14 / TypeScript / Tailwind frontend (App Router) is now at the repo root. It was built against the backend contract in `documentation/CONTRACT_ADDENDUM.md` and all four nights of work (Phases 1–7) are complete with 33 Playwright gates passing (11 intentional desktop-only skips).
+
+```bash
+cd frontend && npm run dev     # http://localhost:3000
+```
+
+All services default to **mock** mode. Flip live per the table in `documentation/FOR_BACKEND.md` (copy `frontend/.env.example` to `frontend/.env.local`):
+
+| Flag | Endpoint it switches | Screens it unblocks |
+|---|---|---|
+| `NEXT_PUBLIC_ITEMS_LIVE=true` | items / presign / grade / poll / route / listings / cards verify | Returns Desk, Reveal, Health Card |
+| `NEXT_PUBLIC_MATCHING_LIVE=true` | `GET /items/{id}/matches` (G1) | "N buyers < 5 km" in Reveal; match push (Phase 5) |
+| `NEXT_PUBLIC_REVIEW_LIVE=true` | `GET /review/queue`, `POST /review/{id}` (G2) | Review console (Phase 6) |
+| `NEXT_PUBLIC_MARKETPLACE_LIVE=true` | `GET /marketplace` extended (G3/G4) | Buyer marketplace (Phase 5) |
+| Cognito env vars | real JWT auth | all private routes |
+
+---
+
+### New backend endpoints (G1–G4)
+
+| Endpoint | Notes |
+|---|---|
+| `GET /items/{id}/matches` | Ranked buyers, `distance_km`, `match_score`, `intent_tier`, `match_count_within_5km`, `top_reason`. Empty when ungraded. |
+| `GET /review/queue` | Sorted by priority (value × uncertainty). `priority` tier: HIGH≥300, MEDIUM≥50, LOW otherwise. |
+| `POST /review/{item_id}` | `{"action":"CONFIRM"/"OVERRIDE","override_grade":null/"<Grade>"}` → returns updated `ItemAggregate` with `meta.status = GRADED`. |
+| `GET /marketplace?category&geo&limit` | Extended: each listing now carries `grade`, `distance_km`, `price_new`, `health_card_id`, `title`, `thumb_key`, `listing_id`. `category=all` accepted. |
+
+Full contract: `openapi.json` at the repo root.
+
+---
+
+### Four runtime-connection fixes
+
+These were "implemented but never wired" — all prior tests passed because each piece was tested in isolation, but the composed runtime never triggered them.
+
+**Fix 1 — Engine B end-to-end (the critical one)**
+`DemandMatchingEngine.match()` was never called at runtime. The two seams it needs (`BuyerNotifier`, `SecondChanceShelf`) had no concrete implementations.
+- New: `rebridge_data/eventbridge_demand_gateways.py` — `EventBridgeBuyerNotifier` and `EventBridgeSecondChanceShelf` publish `BUYER_NOTIFIED` / `SHELF_UPSERTED` events on the existing EventBridge bus. No new infrastructure.
+- `wiring.py` injects `notifier`, `shelf`, and `eventing` into the demand engine.
+- `routers/listings.py` calls `matching.match()` on listing creation (the correct trigger point).
+
+**Fix 2 — `ROUTED` on the async grading path**
+The SQS worker's pipeline used `CallableRouter(routing.decide)` — the agent persists the decision but never emitted `ROUTED`. The event only fired on the explicit `POST /items/{id}/route` endpoint.
+- New: `rebridge_api/routing_adapter.py` — `EventEmittingRouter` calls `decide()` then `emit_routed()`.
+- `wiring.py` `build_worker` now uses `EventEmittingRouter` instead of `CallableRouter`.
+
+**Fix 3 — `GRADED` after human review**
+`ReviewConsoleService.confirm/override` set `meta.status = GRADED` but never emitted the lifecycle event.
+- `routers/review.py` now calls `services.eventing.emit_graded(item_id)` after the action.
+
+**Fix 4 — Composition-level regression tests**
+- `rebridge_api/tests/test_event_wiring.py` — verifies listing creation triggers MATCHED + buyer notifications + shelf, and review confirm/override emits GRADED, through the fully composed harness.
+- `rebridge_api/tests/test_routing_adapter.py` — verifies `EventEmittingRouter` emits ROUTED with the correct disposition.
+
+---
+
+### Pre-production additions (on top of the original §5 checklist)
+
+- **EventBridge rule bindings** — create rules on the `rebridge-lifecycle` bus for the two new detail-types: `BUYER_NOTIFIED` (fan-out to push/email Lambda) and `SHELF_UPSERTED` (Second-Chance PDP shelf rebuild Lambda). Events fire today; consumers are the deployment step.
+- **Frontend Cognito setup** — set `NEXT_PUBLIC_COGNITO_REGION`, `NEXT_PUBLIC_COGNITO_USER_POOL_ID`, `NEXT_PUBLIC_COGNITO_APP_CLIENT_ID`, and `NEXT_PUBLIC_API_BASE_URL` in the frontend's production env. Dev mock token keeps all screens functional until then.
+- **Frontend deployment** — Next.js 14 App Router; deploy to Vercel, Amplify Hosting, or any Node-compatible host. Build: `cd frontend && npm run build`.

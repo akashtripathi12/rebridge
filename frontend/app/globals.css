@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * ReBridge v2 — Premium Retail. CSS variables mirror the Tailwind tokens so raw
+ * CSS (3D overlays, GSAP targets) and Tailwind classes share one palette.
+ */
+:root {
+  --ink: #111111;
+  --charcoal: #39393b;
+  --ash: #4b4b4d;
+  --mute: #707072;
+  --stone: #9e9ea0;
+  --hair: #e5e5e5;
+  --hair-soft: #efeae4;
+  --canvas: #f4f1ec;
+  --paper: #fbfaf7;
+  --pearl: #fefdfb;
+  --amber: #ff9900;
+  --amber-deep: #d97a00;
+  --trust: #007d48;
+  --trust-bright: #1eaa52;
+  --sale: #d30005;
+  --r: 18px;
+  --r-pill: 999px;
+  --e-pop: cubic-bezier(0.2, 1.3, 0.35, 1);
+  --sh-sm: 0 1px 2px rgba(17, 17, 17, 0.04), 0 2px 8px rgba(17, 17, 17, 0.04);
+  --sh-md: 0 8px 24px rgba(17, 17, 17, 0.08), 0 2px 6px rgba(17, 17, 17, 0.05);
+  --sh-lg: 0 30px 60px rgba(17, 17, 17, 0.16);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--canvas);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-family: var(--font-manrope), system-ui, sans-serif;
+  }
+  /* Numbers, prices, IDs are ALWAYS mono — the economics are the brand. */
+  .tnum {
+    font-family: var(--font-jetbrains), monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Visible focus ring for keyboard accessibility (AA). */
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Hero stat ticker marquee. */
+.ticker-track {
+  animation: ticker 30s linear infinite;
+}
+@keyframes ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* 3D scanner defect hotspots (drei <Html> markers). */
+.scanner-hotspot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transform: translateZ(0);
+  animation: hotspotpop 0.4s var(--e-pop);
+}
+.scanner-hotspot .dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 0 4px rgba(255, 153, 0, 0.25), 0 0 14px 2px rgba(255, 153, 0, 0.6);
+}
+.scanner-hotspot .tag {
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 4px 8px;
+  font: 600 10px var(--font-manrope), sans-serif;
+  box-shadow: var(--sh-md);
+}
+@keyframes hotspotpop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Honour reduced motion globally — collapse animations to final state. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

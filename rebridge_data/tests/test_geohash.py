@@ -70,3 +70,70 @@ def test_rejects_non_finite_values(bad):
         encode_geohash5(bad, 0.0)
     with pytest.raises(ValueError):
         encode_geohash5(0.0, bad)
+
+
+# ---------------------------------------------------------------------------
+# decode + haversine distance (G-distance helper)
+# ---------------------------------------------------------------------------
+
+from rebridge_data.geohash import (  # noqa: E402
+    decode_geohash,
+    geohash_distance_km,
+    seeded_distance_km,
+)
+
+
+@pytest.mark.parametrize("coord", [(37.7749, -122.4194), (51.5074, -0.1278), (0.0, 0.0)])
+def test_decode_is_within_cell_of_encode(coord):
+    """A decoded geohash centroid lies close to the coordinate it encoded.
+
+    Geohash5 cells are ~5 km, so the centroid is within a few km of the source.
+    """
+    lat, lon = coord
+    gh = encode_geohash5(lat, lon)
+    dlat, dlon = decode_geohash(gh)
+    # Centroid is within the cell, so within ~0.05 deg lat / lon of the source.
+    assert abs(dlat - lat) < 0.05
+    assert abs(dlon - lon) < 0.06
+
+
+def test_identical_geohashes_have_zero_distance():
+    assert geohash_distance_km("9q8yy", "9q8yy") == 0.0
+
+
+def test_nearby_geohashes_are_closer_than_far_ones():
+    """Two adjacent SF neighborhoods are far closer than SF vs NYC."""
+    # 9q8yy / 9q8yz are adjacent San Francisco cells.
+    near = geohash_distance_km("9q8yy", "9q8yz")
+    # dr5ru is on the US east coast (New York area).
+    far = geohash_distance_km("9q8yy", "dr5ru")
+    assert near < far
+    assert near < 20.0
+    assert far > 3000.0
+
+
+def test_distance_is_symmetric_and_rounded():
+    a_to_b = geohash_distance_km("9q5ct", "dr72j")
+    b_to_a = geohash_distance_km("dr72j", "9q5ct")
+    assert a_to_b == b_to_a
+    # Rounded to one decimal place.
+    assert round(a_to_b, 1) == a_to_b
+
+
+@pytest.mark.parametrize("bad", ["", "!", "ailo"])
+def test_decode_rejects_empty_or_invalid(bad):
+    with pytest.raises(ValueError):
+        decode_geohash(bad)
+
+
+def test_seeded_distance_is_deterministic_and_in_band():
+    first = seeded_distance_km("buy_001")
+    second = seeded_distance_km("buy_001")
+    assert first == second
+    assert 1.0 <= first <= 9.9
+
+
+def test_seeded_distance_varies_by_token():
+    values = {seeded_distance_km(f"buy_{i:03d}") for i in range(20)}
+    # Not all identical — the hash spreads tokens across the band.
+    assert len(values) > 1

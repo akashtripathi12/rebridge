@@ -52,6 +52,10 @@ from rebridge_data.bedrock_grading_providers import (
 )
 from rebridge_data.dynamo_item_repository import DynamoItemRepository
 from rebridge_data.dynamo_review_queue_repository import DynamoReviewQueueRepository
+from rebridge_data.eventbridge_demand_gateways import (
+    EventBridgeBuyerNotifier,
+    EventBridgeSecondChanceShelf,
+)
 from rebridge_data.eventbridge_publisher import EventBridgePublisher
 from rebridge_data.kms_card_signer import KmsCardSigner
 from rebridge_data.s3_object_store import S3ObjectStore
@@ -65,7 +69,7 @@ from rebridge_service.confidence_gate import (
 from rebridge_service.demand_matching_engine import DemandMatchingEngine
 from rebridge_service.eventing_service import EventingService
 from rebridge_service.grading_engine import GradingEngine
-from rebridge_service.grading_pipeline import CallableRouter, GradingPipeline
+from rebridge_service.grading_pipeline import GradingPipeline
 from rebridge_service.health_card_service import HealthCardService
 from rebridge_service.item_service import ItemService
 from rebridge_service.quality_precheck import QualityPrecheck
@@ -77,6 +81,7 @@ from rebridge_api import http_adapter
 from rebridge_api.app import create_app
 from rebridge_api.auth import CognitoJwtVerifier
 from rebridge_api.dependencies import Services, set_verifier
+from rebridge_api.routing_adapter import EventEmittingRouter
 from rebridge_api.worker import GradingWorker, set_worker
 
 __all__ = [
@@ -271,6 +276,10 @@ def build_services(settings: Settings) -> BuiltServices:
     signer = KmsCardSigner(settings.kms_key_id, region_name=region)
     publisher = EventBridgePublisher(settings.event_bus, region_name=region)
     buyers = SeededBuyerPersonaRepository()
+    # Demand-matching side-effect gateways, realized as events on the same bus
+    # (no new external infra) so Engine B's push/shelf are connected end to end.
+    buyer_notifier = EventBridgeBuyerNotifier(publisher)
+    second_chance_shelf = EventBridgeSecondChanceShelf(publisher)
 
     # Ordered grading cascade: Nova Lite first, Claude vision fallback (Req 8.4).
     providers = [
@@ -297,8 +306,14 @@ def build_services(settings: Settings) -> BuiltServices:
     )
 
     review_console = ReviewConsoleService(item_repo, review_repo)
+    # Engine B fully connected: notifier + shelf + eventing injected so match()
+    # notifies top-N buyers, upserts the Second-Chance shelf, and emits MATCHED.
     demand_engine = DemandMatchingEngine(
-        buyers, eventing=eventing, top_n=settings.top_n
+        buyers,
+        notifier=buyer_notifier,
+        shelf=second_chance_shelf,
+        eventing=eventing,
+        top_n=settings.top_n,
     )
 
     services = Services(
@@ -308,6 +323,8 @@ def build_services(settings: Settings) -> BuiltServices:
         queue=queue,
         item_repo=item_repo,
         card_service=card_service,
+        matching=demand_engine,
+        review=review_console,
     )
 
     return BuiltServices(
@@ -378,7 +395,7 @@ def build_worker(settings: Settings, built: BuiltServices | None = None) -> Grad
         confidence_gate=built.confidence_gate,
         card_service=built.card_service,
         eventing=built.eventing,
-        router=CallableRouter(built.routing.decide),
+        router=EventEmittingRouter(built.routing, built.eventing),
     )
 
     worker = GradingWorker(pipeline_provider=lambda: pipeline)

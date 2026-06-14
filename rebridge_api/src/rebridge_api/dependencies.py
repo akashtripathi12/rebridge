@@ -43,9 +43,11 @@ from rebridge_api.auth import AuthError, JwtVerifier
 
 if TYPE_CHECKING:  # pragma: no cover - typing only, avoids import cost at runtime
     from rebridge_data.interfaces import ItemRepository, QueueClient
+    from rebridge_service.demand_matching_engine import DemandMatchingEngine
     from rebridge_service.eventing_service import EventingService
     from rebridge_service.health_card_service import HealthCardService
     from rebridge_service.item_service import ItemService
+    from rebridge_service.review_console_service import ReviewConsoleService
     from rebridge_service.routing_agent import RoutingAgent
 
 __all__ = [
@@ -85,6 +87,14 @@ class Services:
     card_service:
         Health Card render/sign/verify, used by the public verify route
         (task 17.4); optional so the container can be built without it.
+    matching:
+        Demand_Matching_Engine (Engine B), used by the matches route
+        (GET /items/{id}/matches, G1); optional so the container can be built
+        without it.
+    review:
+        Review_Console_API service, used by the review routes (GET /review/queue
+        and POST /review/{id}, G2); optional so the container can be built
+        without it.
     """
 
     item_service: "ItemService"
@@ -93,6 +103,8 @@ class Services:
     queue: "QueueClient"
     item_repo: "ItemRepository"
     card_service: "HealthCardService | None" = None
+    matching: "DemandMatchingEngine | None" = None
+    review: "ReviewConsoleService | None" = None
 
 
 def set_services(app, services: Services) -> None:
