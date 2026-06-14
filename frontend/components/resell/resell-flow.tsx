@@ -177,15 +177,6 @@ export function ResellFlow() {
         <PhotoUploader shots={shots} onAdd={addShots} onRemove={removeShot} />
 
         <aside className="flex flex-col gap-5">
-          <div className="rounded-card border border-hair bg-pearl p-5 shadow-sm">
-            <div className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-stone">
-              Context · Order scan
-            </div>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-mute">
-              Helps the model and the routing decision.
-            </p>
-          </div>
-
           <Field label="Product title">
             <input
               data-testid="title-input"
@@ -266,9 +257,6 @@ export function ResellFlow() {
             >
               <Camera className="h-4 w-4" /> Grade my item (₹3)
             </Button>
-            <p className="text-center text-[11px] text-mute">
-              Takes ~5s. Your bytes go straight to S3 — never through us in plaintext.
-            </p>
           </div>
         </aside>
       </div>
@@ -333,18 +321,18 @@ export function ResellFlow() {
       <div className="grid gap-8 lg:grid-cols-[1.05fr_minmax(0,420px)]">
         <div>
           {/* Product preview */}
-          <div className="relative grid aspect-[16/11] place-items-center overflow-hidden rounded-card border border-white/10 bg-[radial-gradient(140%_120%_at_30%_8%,#2a2a2e,#161618_60%,#0e0e10)]">
+          <div className="relative grid aspect-[4/3] place-items-center overflow-hidden rounded-card border border-hair bg-paper">
             {previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={previewUrl}
                 alt={title}
-                className="h-[78%] w-[78%] object-contain drop-shadow-[0_24px_30px_rgba(0,0,0,0.55)]"
+                className="h-full w-full object-contain"
               />
             ) : (
               <ProductGlyph
                 kind={THUMB_BY_CATEGORY[category]}
-                className="w-[55%] drop-shadow-[0_24px_30px_rgba(0,0,0,0.55)]"
+                className="w-[55%]"
               />
             )}
             <div
@@ -478,13 +466,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function GradingView({ previewUrl }: { previewUrl: string | null }) {
   return (
     <div className="grid gap-8 lg:grid-cols-[1.05fr_minmax(0,420px)]">
-      <div className="relative grid aspect-[16/11] place-items-center overflow-hidden rounded-card border border-white/10 bg-[radial-gradient(140%_120%_at_30%_8%,#2a2a2e,#161618_60%,#0e0e10)]">
+      <div className="relative grid aspect-[4/3] place-items-center overflow-hidden rounded-card border border-hair bg-paper">
         {previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={previewUrl}
             alt="Inspecting"
-            className="h-[78%] w-[78%] object-contain drop-shadow-[0_24px_30px_rgba(0,0,0,0.55)]"
+            className="h-full w-full object-contain"
           />
         ) : (
           <ProductGlyph kind="shoe" className="w-[55%]" />

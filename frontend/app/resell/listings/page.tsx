@@ -50,8 +50,8 @@ export default function MyListingsPage() {
                 Nothing listed yet
               </div>
               <p className="mt-2 max-w-[44ch] text-[13px] text-ash">
-                Photograph a returned or unused item — we&apos;ll grade it for ₹3
-                and route it to its next owner.
+                Photograph a returned or unused item — we&apos;ll grade it and
+                route it to its next owner.
               </p>
               <Link href="/resell" className="mt-5">
                 <Button variant="primary" size="md">

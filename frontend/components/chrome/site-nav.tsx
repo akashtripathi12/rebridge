@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, Menu, Repeat, RotateCcw, ShieldCheck, ShoppingBag, UserCog, X } from "lucide-react";
+import { Bell, Menu, Repeat, RotateCcw, ShieldCheck, ShoppingBag, Tag, UserCog, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRole, roleStore } from "@/lib/role";
 import { useNotifs } from "@/lib/notifications";
@@ -18,12 +18,14 @@ interface NavItem {
 const CUSTOMER_NAV: NavItem[] = [
   { href: "/market", label: "Market", Icon: ShoppingBag },
   { href: "/resell", label: "Resell", Icon: Repeat },
+  { href: "/resell/listings", label: "My listings", Icon: Tag },
   { href: "/notifications", label: "Notifications", Icon: Bell },
 ];
 
 const OPERATOR_NAV: NavItem[] = [
   { href: "/market", label: "Market", Icon: ShoppingBag },
   { href: "/resell", label: "Resell", Icon: Repeat },
+  { href: "/resell/listings", label: "My listings", Icon: Tag },
   { href: "/returns/handle", label: "Return", Icon: RotateCcw },
   { href: "/notifications", label: "Notifications", Icon: Bell },
   { href: "/review", label: "Review", Icon: ShieldCheck },
@@ -44,6 +46,12 @@ export function SiteNav() {
   const items = role === "operator" ? OPERATOR_NAV : CUSTOMER_NAV;
   const [open, setOpen] = useState(false);
 
+  // Most-specific match wins, so /resell/listings highlights "My listings"
+  // rather than also lighting up "Resell" (whose href is a prefix of it).
+  const activeHref = items
+    .filter((i) => pathname === i.href || pathname?.startsWith(i.href + "/"))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
   // Close the drawer on route change.
   useEffect(() => setOpen(false), [pathname]);
 
@@ -60,8 +68,7 @@ export function SiteNav() {
 
         <nav className="hidden flex-1 items-center gap-1 sm:flex" data-testid="primary-nav">
           {items.map((item) => {
-            const active =
-              pathname === item.href || pathname?.startsWith(item.href + "/");
+            const active = item.href === activeHref;
             const isNotif = item.href === "/notifications";
             return (
               <Link
@@ -109,8 +116,7 @@ export function SiteNav() {
         <div className="border-t border-hair bg-canvas px-4 py-3 sm:hidden" data-testid="mobile-nav">
           <div className="flex flex-col gap-1">
             {items.map((item) => {
-              const active =
-                pathname === item.href || pathname?.startsWith(item.href + "/");
+              const active = item.href === activeHref;
               return (
                 <Link
                   key={item.href}
@@ -125,12 +131,6 @@ export function SiteNav() {
                 </Link>
               );
             })}
-            <Link
-              href="/resell/listings"
-              className="rounded-card px-3 py-2.5 font-sans text-[13px] font-medium text-mute"
-            >
-              My listings
-            </Link>
           </div>
         </div>
       ) : null}
