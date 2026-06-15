@@ -20,10 +20,13 @@ from rebridge_api.auth import (
 )
 from rebridge_api.dependencies import (
     CurrentUser,
+    RequireOperator,
     Services,
+    get_current_operator,
     get_current_user,
     get_services,
     get_verifier,
+    require_role,
     set_services,
     set_verifier,
 )
@@ -46,6 +49,9 @@ __all__: list[str] = [
     "set_services",
     "get_services",
     "get_current_user",
+    "get_current_operator",
+    "require_role",
+    "RequireOperator",
     "CurrentUser",
     "set_verifier",
     "get_verifier",

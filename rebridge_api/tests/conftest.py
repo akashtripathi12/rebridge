@@ -126,10 +126,13 @@ class Harness:
         )
         self.app = create_app(services=self.services)
         # These route tests exercise the service wiring, not authentication, so
-        # override the auth dependency with a stub principal. The dedicated auth
-        # tests (test_auth.py) build an app with a real verifier instead.
+        # override the auth dependency with a stub principal. The stub carries the
+        # operator role so the back-office routes (create/grade/route/listing
+        # CRUD/review) admit it; the dedicated auth tests (test_auth.py) build an
+        # app with a real verifier, and the RBAC tests (test_rbac.py) override
+        # this with customer/operator principals to assert the 403 boundary.
         self.app.dependency_overrides[get_current_user] = lambda: CurrentUser(
-            subject="test-user", claims={"sub": "test-user"}
+            subject="test-user", claims={"sub": "test-user"}, role="operator"
         )
         self.client = TestClient(self.app)
 

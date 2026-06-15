@@ -33,7 +33,7 @@ keypair / fake JWKS -- and the dependency itself stays overridable via
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from fastapi import Depends, Request
 from fastapi import status as http_status
@@ -59,7 +59,18 @@ __all__ = [
     "CurrentUser",
     "get_current_user",
     "RequireUser",
+    "OPERATOR_ROLE",
+    "CUSTOMER_ROLE",
+    "require_role",
+    "get_current_operator",
+    "RequireOperator",
 ]
+
+# Canonical role values carried in the Cognito ``custom:role`` claim. Operator
+# accounts run the returns/grading/review back office; customer accounts only
+# browse the marketplace and their buyer matches.
+OPERATOR_ROLE = "operator"
+CUSTOMER_ROLE = "customer"
 
 
 @dataclass
@@ -140,11 +151,16 @@ class CurrentUser:
     """The authenticated principal for a private route.
 
     Populated from a validated Cognito JWT: ``subject`` is the token ``sub``
-    claim and ``claims`` is the full set of verified claims.
+    claim, ``role`` is the ``custom:role`` claim (``"operator"`` / ``"customer"``,
+    or ``None`` when the token carries no role), and ``claims`` is the full set of
+    verified claims. Role-based authorization reads ``role`` (see
+    :func:`require_role`); never trust a role supplied any other way than the
+    verified token.
     """
 
     subject: str
     claims: dict[str, object]
+    role: str | None = None
 
 
 def set_verifier(app, verifier: JwtVerifier) -> None:
@@ -216,9 +232,62 @@ def get_current_user(request: Request) -> CurrentUser:
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
     subject = str(claims.get("sub", ""))
-    return CurrentUser(subject=subject, claims=dict(claims))
+    role = _extract_role(claims)
+    return CurrentUser(subject=subject, claims=dict(claims), role=role)
+
+
+def _extract_role(claims: dict[str, object]) -> str | None:
+    """Pull the role from the verified ``custom:role`` claim, normalized.
+
+    Returns the lower-cased role string, or ``None`` when the token carries no
+    ``custom:role`` (such a principal is authenticated but has no operator
+    privileges). Reading the role only from verified claims is what keeps role
+    enforcement server-side and independent of the client.
+    """
+
+    raw = claims.get("custom:role")
+    if raw is None:
+        return None
+    return str(raw).strip().lower() or None
 
 
 # Convenience alias for router signatures; keeps the auth seam visible in the
 # handler signature while remaining easy to override.
 RequireUser = Depends(get_current_user)
+
+
+def require_role(*allowed_roles: str) -> Callable[..., CurrentUser]:
+    """Build a dependency that admits only the given verified roles, else 403.
+
+    The returned dependency layers on :func:`get_current_user` (so the token is
+    still fully validated and a missing/invalid token is still a 401) and then
+    checks the principal's ``role`` against ``allowed_roles``, raising HTTP 403
+    when it does not match. Because it composes :func:`get_current_user`, a test
+    that overrides ``get_current_user`` flows through here unchanged.
+
+    Example
+    -------
+    ``_user: CurrentUser = Depends(require_role("operator"))`` — or just use the
+    prebuilt :data:`RequireOperator`.
+    """
+
+    allowed = frozenset(allowed_roles)
+
+    def _require_role(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+        if user.role not in allowed:
+            raise HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail=(
+                    "this operation requires role "
+                    f"{sorted(allowed)}; your account role is {user.role!r}"
+                ),
+            )
+        return user
+
+    return _require_role
+
+
+# The operator gate, prebuilt for the back-office routes (returns intake,
+# grading triggers, routing, listing CRUD, and the review console).
+get_current_operator = require_role(OPERATOR_ROLE)
+RequireOperator = Depends(get_current_operator)

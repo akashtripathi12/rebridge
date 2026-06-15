@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 "use client";
 
 import { useMemo, useState } from "react";
@@ -14,8 +15,17 @@ import { cn } from "@/lib/utils";
 import { ShieldCheck, MapPin, Sparkles, Tag, Flame } from "lucide-react";
 
 type SortKey = "recommended" | "distance" | "price-low" | "price-high";
+=======
+import { MarketBrowser } from "@/components/market/market-browser";
+>>>>>>> Stashed changes
 
+/**
+ * Legacy `/market` alias. The canonical customer landing is `/marketplace`
+ * (role-guarded route group); this path is kept so existing links and the e2e
+ * suite keep working, rendering the same shared browser.
+ */
 export default function MarketPage() {
+<<<<<<< Updated upstream
   const [category, setCategory] = useState(MARKET_CATEGORIES[0].id);
   const [sort, setSort] = useState<SortKey>("recommended");
 
@@ -231,4 +241,7 @@ export default function MarketPage() {
       </div>
     </main>
   );
+=======
+  return <MarketBrowser />;
+>>>>>>> Stashed changes
 }

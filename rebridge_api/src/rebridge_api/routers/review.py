@@ -24,7 +24,7 @@ from rebridge_service.models import Grade
 from rebridge_api.dependencies import (
     CurrentUser,
     Services,
-    get_current_user,
+    get_current_operator,
     get_services,
 )
 from rebridge_api.models import (
@@ -52,7 +52,7 @@ def _require_review(services: Services) -> None:
 @router.get("/review/queue", response_model=ReviewQueueResponse)
 def get_review_queue(
     services: Services = Depends(get_services),
-    _user: CurrentUser = Depends(get_current_user),
+    _user: CurrentUser = Depends(get_current_operator),
 ) -> ReviewQueueResponse:
     """Return the prioritized review queue with server-computed tiers (G2)."""
 
@@ -66,7 +66,7 @@ def review_action(
     item_id: str,
     body: ReviewActionRequest,
     services: Services = Depends(get_services),
-    _user: CurrentUser = Depends(get_current_user),
+    _user: CurrentUser = Depends(get_current_operator),
 ) -> ItemAggregateResponse:
     """Confirm or override a pending grade; return the updated Item (G2).
 

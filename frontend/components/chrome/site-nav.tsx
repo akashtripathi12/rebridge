@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, Menu, Repeat, RotateCcw, ShieldCheck, ShoppingBag, Tag, UserCog, X } from "lucide-react";
+import { Bell, LogOut, Menu, Repeat, RotateCcw, ShieldCheck, ShoppingBag, Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useRole, roleStore } from "@/lib/role";
+import { useRole } from "@/lib/role";
+import { useSession, sessionStore } from "@/lib/session";
 import { useNotifs } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
@@ -15,28 +16,27 @@ interface NavItem {
   Icon: React.ComponentType<{ className?: string }>;
 }
 
+// Customers only ever see buyer/seller surfaces; operators only ever see the
+// back office. The route-group guards enforce this server-of-truth split; this
+// nav simply reflects it so each role sees only its own destinations.
 const CUSTOMER_NAV: NavItem[] = [
-  { href: "/market", label: "Market", Icon: ShoppingBag },
+  { href: "/marketplace", label: "Market", Icon: ShoppingBag },
   { href: "/resell", label: "Resell", Icon: Repeat },
   { href: "/resell/listings", label: "My listings", Icon: Tag },
   { href: "/notifications", label: "Notifications", Icon: Bell },
 ];
 
 const OPERATOR_NAV: NavItem[] = [
-  { href: "/market", label: "Market", Icon: ShoppingBag },
-  { href: "/resell", label: "Resell", Icon: Repeat },
-  { href: "/resell/listings", label: "My listings", Icon: Tag },
+  { href: "/operator/review-queue", label: "Review", Icon: ShieldCheck },
   { href: "/returns/handle", label: "Return", Icon: RotateCcw },
   { href: "/notifications", label: "Notifications", Icon: Bell },
-  { href: "/review", label: "Review", Icon: ShieldCheck },
 ];
 
 /**
  * Site nav — the real chrome (not a phone mock). Sticky header with brand,
- * primary sections (Market / Resell / Notifications), a role switcher
- * (Customer ↔ Operator), and a mobile drawer. The unread-notif count badges the
- * bell. Role gates /review (which only appears in Operator mode), exactly as the
- * brief asks for ("a button to switch between operator and customer").
+ * role-scoped primary sections, a sign-in / sign-out control, and a mobile
+ * drawer. The unread-notif count badges the bell. Hidden entirely on the auth
+ * pages (/login, /register), which stand on their own without app chrome.
  */
 export function SiteNav() {
   const role = useRole();
@@ -54,6 +54,9 @@ export function SiteNav() {
 
   // Close the drawer on route change.
   useEffect(() => setOpen(false), [pathname]);
+
+  // Auth pages render without the app nav.
+  if (pathname === "/login" || pathname === "/register") return null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-hair bg-canvas/90 backdrop-blur">
@@ -99,7 +102,7 @@ export function SiteNav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <RoleSwitch />
+          <AuthControl />
           <button
             className="rounded-pill p-2 text-ink sm:hidden"
             onClick={() => setOpen((v) => !v)}
@@ -138,35 +141,40 @@ export function SiteNav() {
   );
 }
 
-function RoleSwitch() {
-  const role = useRole();
+/**
+ * Auth status: signed-in shows the account email + a sign-out button; signed-out
+ * shows a Sign in link. Sign-out clears the session and returns to the public
+ * landing. Role is assigned at registration — there is no in-nav role toggle.
+ */
+function AuthControl() {
+  const session = useSession();
+  const router = useRouter();
+
+  if (!session) {
+    return (
+      <Link href="/login" data-testid="nav-signin">
+        <Button variant="secondary" size="sm">
+          Sign in
+        </Button>
+      </Link>
+    );
+  }
+
   return (
-    <div
-      data-testid="role-switch"
-      data-role={role}
-      className="flex items-center gap-1 rounded-pill border border-hair bg-paper p-0.5 text-[11px] font-bold"
-    >
+    <div className="flex items-center gap-2" data-testid="nav-account">
+      <span className="hidden max-w-[140px] truncate text-[12px] font-semibold text-ash sm:inline">
+        {session.email}
+      </span>
       <button
-        data-testid="role-customer"
-        onClick={() => roleStore.set("customer")}
-        className={cn(
-          "rounded-pill px-2.5 py-1 transition-colors",
-          role === "customer" ? "bg-ink text-white" : "text-mute hover:text-ink",
-        )}
+        data-testid="nav-signout"
+        onClick={() => {
+          sessionStore.logout();
+          router.replace("/");
+        }}
+        aria-label="Sign out"
+        className="rounded-pill p-2 text-mute hover:text-ink"
       >
-        <span className="hidden sm:inline">Customer</span>
-        <ShoppingBag className="h-3.5 w-3.5 sm:hidden" />
-      </button>
-      <button
-        data-testid="role-operator"
-        onClick={() => roleStore.set("operator")}
-        className={cn(
-          "flex items-center gap-1 rounded-pill px-2.5 py-1 transition-colors",
-          role === "operator" ? "bg-ink text-white" : "text-mute hover:text-ink",
-        )}
-      >
-        <span className="hidden sm:inline">Operator</span>
-        <UserCog className="h-3.5 w-3.5 sm:hidden" />
+        <LogOut className="h-4 w-4" />
       </button>
     </div>
   );

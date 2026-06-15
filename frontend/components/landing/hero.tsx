@@ -8,7 +8,6 @@ import gsap from "gsap";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { prefersReducedMotion } from "@/lib/motion";
-import { Magnetic } from "@/components/landing/magnetic";
 
 /**
  * Hero — ReBridge's landing hero, rebuilt as an editorial composition where the
@@ -47,7 +46,6 @@ export function Hero() {
   const objectRef = useRef<HTMLDivElement>(null);
 
   const [showScene, setShowScene] = useState(false);
-  const [sceneReady, setSceneReady] = useState(false);
 
   useEffect(() => {
     const reduced = prefersReducedMotion();
@@ -60,18 +58,21 @@ export function Hero() {
       if (reduced) {
         gsap.set(spans, { yPercent: 0, opacity: 1 });
         gsap.set("[data-reveal]", { opacity: 1, y: 0 });
-        gsap.set(objectRef.current, { opacity: 1, y: 0 });
+        gsap.set(objectRef.current, { opacity: 1 });
         return;
       }
 
       gsap.set(spans, { yPercent: 110, opacity: 0 });
       gsap.set("[data-reveal]", { opacity: 0, y: 22 });
-      gsap.set(objectRef.current, { opacity: 0, y: 30 });
+      // Only fade the object in — its vertical placement is owned by the inline
+      // transform (translateY centering + scroll parallax), and the 3D scene
+      // plays its own rise. Animating `y` here would overwrite that transform.
+      gsap.set(objectRef.current, { opacity: 0 });
 
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
       tl.to("[data-eyebrow]", { opacity: 1, y: 0, duration: 0.6 }, 0.05)
         .to(spans, { yPercent: 0, opacity: 1, duration: 0.95, stagger: 0.1 }, 0.1)
-        .to(objectRef.current, { opacity: 1, y: 0, duration: 1.1 }, 0.35)
+        .to(objectRef.current, { opacity: 1, duration: 1.1 }, 0.35)
         .to(
           "[data-reveal]:not([data-eyebrow])",
           { opacity: 1, y: 0, duration: 0.7, stagger: 0.08 },
@@ -164,7 +165,7 @@ export function Hero() {
           <h1
             ref={headlineRef}
             data-testid="hero-headline"
-            className="relative z-10 max-w-[15ch] font-display text-[clamp(52px,11.5vw,150px)] font-black uppercase leading-[0.88] tracking-[-0.045em] will-change-transform"
+            className="relative z-10 max-w-[15ch] font-display text-[clamp(40px,8.5vw,112px)] font-extrabold uppercase leading-[0.88] tracking-[-0.045em] will-change-transform"
           >
             {LINES.map((line, i) => (
               <span key={i} data-line className="block overflow-hidden pb-[0.05em]">
@@ -195,32 +196,34 @@ export function Hero() {
             ref={objectRef}
             data-testid="hero-image"
             className="absolute z-20 will-change-transform
-                       right-[-8%] top-1/2 h-[clamp(300px,46vw,640px)] w-[clamp(300px,46vw,640px)] -translate-y-1/2
-                       sm:right-[-4%]
-                       lg:right-[-6%] lg:h-[640px] lg:w-[640px]"
-            style={{ transform: "translateY(calc(-50% + var(--py, 0px)))" }}
+                       right-[-3%] top-1/2 h-[clamp(300px,46vw,660px)] w-[clamp(300px,46vw,660px)]
+                       sm:right-[-1%]
+                       lg:right-[-2%] lg:h-[660px] lg:w-[660px]"
+            style={{ transform: "translateY(calc(-40% + var(--py, 0px)))" }}
           >
-            {/* Static cutout — base layer for reduced-motion / no-WebGL and the
-                seamless fallback while three streams in. */}
-            <Image
-              src="/hero/product.png"
-              alt="A restored premium running sneaker floating — the ReBridge second-life object"
-              fill
-              priority
-              sizes="(min-width: 1024px) 640px, 60vw"
-              className="object-contain drop-shadow-[0_40px_60px_rgba(17,17,17,0.25)] transition-opacity duration-500"
-              style={{ opacity: sceneReady ? 0 : 1 }}
-            />
-            {showScene && (
+            {/* With motion allowed the 3D scene mounts and plays its own entrance
+                (a smooth rise + settle) — no still placeholder, so the product
+                animates in cleanly rather than swapping out of a static image.
+                The cutout is kept ONLY as the reduced-motion / no-WebGL fallback. */}
+            {showScene ? (
               <div className="absolute inset-0">
-                <HeroScene onReady={() => setSceneReady(true)} />
+                <HeroScene />
               </div>
+            ) : (
+              <Image
+                src="/hero/product.png"
+                alt="A restored premium running sneaker floating — the ReBridge second-life object"
+                fill
+                priority
+                sizes="(min-width: 1024px) 640px, 60vw"
+                className="object-contain drop-shadow-[0_40px_60px_rgba(17,17,17,0.25)]"
+              />
             )}
           </div>
         </div>
 
         {/* LOWER-LEFT — copy, CTAs, proof. Above the object stack so clickable. */}
-        <div className="relative z-30 max-w-[52ch]">
+        <div className="relative z-40 max-w-[52ch]">
           <p
             data-reveal
             className="mt-8 text-[16px] leading-relaxed text-ash sm:text-[17px]"
@@ -234,25 +237,21 @@ export function Hero() {
           </p>
 
           <div data-reveal className="mt-9 flex flex-wrap items-center gap-3">
-            <Magnetic strength={0.3}>
-              <Link href="/market" data-testid="cta-market" className="group inline-block">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="shadow-lg transition-shadow duration-300 hover:shadow-[0_24px_50px_-12px_rgba(17,17,17,0.45)]"
-                >
-                  Browse Second Chance
-                </Button>
-              </Link>
-            </Magnetic>
-            <Magnetic strength={0.25}>
-              <Link href="/resell" data-testid="cta-resell" className="group inline-block">
-                <Button variant="secondary" size="lg" className="hover:border-amber/40">
-                  Resell an item
-                  <ArrowRight className="h-4 w-4 transition-transform duration-300 ease-pop group-hover:translate-x-1" />
-                </Button>
-              </Link>
-            </Magnetic>
+            <Link href="/market" data-testid="cta-market" className="group inline-block">
+              <Button
+                variant="primary"
+                size="lg"
+                className="shadow-lg transition-shadow duration-300 hover:shadow-[0_24px_50px_-12px_rgba(17,17,17,0.45)]"
+              >
+                Browse Second Chance
+              </Button>
+            </Link>
+            <Link href="/resell" data-testid="cta-resell" className="group inline-block">
+              <Button variant="secondary" size="lg" className="hover:border-amber/40">
+                Resell an item
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 ease-pop group-hover:translate-x-1" />
+              </Button>
+            </Link>
           </div>
 
           <a

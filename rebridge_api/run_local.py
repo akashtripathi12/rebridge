@@ -40,10 +40,12 @@ def setup_app():
         allow_headers=["*"],
     )
 
-    # Bypass Cognito JWT verification for local testing since the frontend doesn't have a login UI yet
+    # Bypass Cognito JWT verification for local testing since the frontend doesn't have a login UI yet.
+    # The stub is given the operator role so the back-office routes (create/grade/route/listing
+    # CRUD/review) are reachable in local dev.
     from rebridge_api.dependencies import get_current_user, CurrentUser
     app.dependency_overrides[get_current_user] = lambda: CurrentUser(
-        subject="local-dev-user", claims={"sub": "local-dev-user"}
+        subject="local-dev-user", claims={"sub": "local-dev-user"}, role="operator"
     )
 
     # Build the worker using the live AWS data layers
