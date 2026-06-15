@@ -207,19 +207,12 @@ class PriceEstimator:
                 high = (tmv * Decimal("1.15")).quantize(Decimal("0.01"))
                 
                 if expected_price is not None:
-                    # Blending logic
-                    if expected_price > tmv * Decimal("1.15"):
-                        # Overpriced: ignore their unrealistic expectation to protect unit economics.
-                        # The point and high/low bands remain anchored to TMV.
-                        pass
-                    elif expected_price < tmv * Decimal("0.85"):
-                        # Underpriced: ignore their lowball expectation to protect the seller.
-                        pass
-                    else:
-                        # Realistic: within 15%, so use their expected price as point
-                        point = expected_price
-                        low = (point * Decimal("0.85")).quantize(Decimal("0.01"))
-                        high = (point * Decimal("1.15")).quantize(Decimal("0.01"))
+                    # Calculate TMV in respect of expected value as requested.
+                    # This ensures that even if the gap is large, we honor the seller's expectation
+                    # (which is already bounded by the original price in the UI).
+                    point = expected_price
+                    low = (point * Decimal("0.85")).quantize(Decimal("0.01"))
+                    high = (point * Decimal("1.15")).quantize(Decimal("0.01"))
                         
                 return PriceBand(
                     category=band.category,

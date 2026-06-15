@@ -186,19 +186,17 @@ def test_price_estimator_original_price_logic():
     # 1. No expected price -> use TMV (40)
     band1 = est.estimate("widgets", Grade.GOOD, 15, original_price=Decimal("100.00"))
     assert band1.point == Decimal("40.00")
-    
-    # 2. Expected price is realistic (within 15% of 40) -> 42
-    band2 = est.estimate("widgets", Grade.GOOD, 15, original_price=Decimal("100.00"), expected_price=Decimal("42.00"))
-    assert band2.point == Decimal("42.00")
-    
-    # 3. Expected price is overpriced (> 46) -> 60. Ignored, stays at TMV.
-    band3 = est.estimate("widgets", Grade.GOOD, 15, original_price=Decimal("100.00"), expected_price=Decimal("60.00"))
-    assert band3.point == Decimal("40.00")
-    assert band3.high == Decimal("46.00")
-    
-    # 4. Expected price is underpriced (< 34) -> 30. Point stays TMV.
-    band4 = est.estimate("widgets", Grade.GOOD, 15, original_price=Decimal("100.00"), expected_price=Decimal("30.00"))
-    assert band4.point == Decimal("40.00")
+
+    # 2. Expected price is honored without guardrails
+    band2 = est.estimate("widgets", Grade.GOOD, 15, original_price=Decimal("100.00"), expected_price=Decimal("120.00"))
+    assert band2.point == Decimal("120.00")
+    assert band2.high == Decimal("138.00") # 120 * 1.15
+    assert band2.low == Decimal("102.00") # 120 * 0.85
+
+    # 3. Even underpriced expectations are honored
+    band3 = est.estimate("widgets", Grade.GOOD, 15, original_price=Decimal("100.00"), expected_price=Decimal("20.00"))
+    assert band3.point == Decimal("20.00")
+    assert band3.high == Decimal("23.00") # 20 * 1.15
 
 
 # --- CostModel (Req 10.2) --------------------------------------------------

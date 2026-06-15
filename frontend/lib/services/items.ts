@@ -183,8 +183,17 @@ class MockItemsService implements ItemsService {
 
   async route(itemId: string) {
     const entry = this.ensure(itemId);
-    const decision =
+    let decision =
       entry.aggregate.decision ?? seedGradedItem(itemId).decision!;
+      
+    if (entry.aggregate.grade?.grade === "Unsellable" && entry.aggregate.meta.category === "electronics") {
+      decision = {
+        ...decision,
+        disposition: "RECYCLE",
+        rationale: "RECYCLE selected: Unsellable electronics must be recycled."
+      };
+    }
+    
     entry.aggregate = { ...entry.aggregate, decision };
     return routeDecisionSchema.parse(decision);
   }

@@ -58,8 +58,8 @@ export default function ProductDetailPage() {
     });
     notifs.add({
       variant: "buyer",
-      title: "Reserved",
-      body: `${card.data.title} — pickup scheduled tomorrow 10–12, ${formatDistance(distance)} away.`,
+      title: `Reserved — ${card.data.title} · ${card.data.grade} · ₹${card.data.price}`,
+      body: `🌱 +12 Green Credits earned\n= 4.1 kg CO₂ saved · 612 km of reverse shipping avoided\n\nYou now have 47 credits · ₹23 toward your next order`,
       meta: "just now",
       href: `/product/${card.data.item_id}`,
     });

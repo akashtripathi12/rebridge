@@ -47,7 +47,7 @@ export const GRADES = [
 export type GradeLabel = (typeof GRADES)[number];
 
 /** Disposition union — verbatim from the backend Disposition enum. */
-export const DISPOSITIONS = ["RESELL", "REFURB", "P2P", "DONATE"] as const;
+export const DISPOSITIONS = ["RESELL", "REFURB", "P2P", "DONATE", "RECYCLE"] as const;
 export type DispositionLabel = (typeof DISPOSITIONS)[number];
 
 /** Item lifecycle status — verbatim from ItemStatus. */
