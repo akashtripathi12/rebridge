@@ -169,7 +169,24 @@ export const sessionStore = {
 
 function subscribe(cb: () => void): () => void {
   listeners.add(cb);
-  return () => listeners.delete(cb);
+
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === SESSION_KEY || e.key === null) {
+      current = readSession();
+      cb();
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", handleStorage);
+  }
+
+  return () => {
+    listeners.delete(cb);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", handleStorage);
+    }
+  };
 }
 
 /** Reactive hook returning the current session (null when signed out). */

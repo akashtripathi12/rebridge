@@ -61,6 +61,7 @@ from rebridge_data.kms_card_signer import KmsCardSigner
 from rebridge_data.s3_object_store import S3ObjectStore
 from rebridge_data.seeded_buyer_persona_repository import SeededBuyerPersonaRepository
 from rebridge_data.sqs_queue_client import SqsQueueClient
+from rebridge_data.dynamo_notification_repository import DynamoDbNotificationRepository
 
 from rebridge_service.confidence_gate import (
     DEFAULT_CONFIDENCE_THRESHOLD,
@@ -72,6 +73,8 @@ from rebridge_service.grading_engine import GradingEngine
 from rebridge_service.grading_pipeline import GradingPipeline
 from rebridge_service.health_card_service import HealthCardService
 from rebridge_service.item_service import ItemService
+from rebridge_service.notification_service import NotificationService
+from rebridge_service.notification_worker import NotificationWorker
 from rebridge_service.quality_precheck import QualityPrecheck
 from rebridge_service.review_console_service import ReviewConsoleService
 from rebridge_service.routing_agent import RoutingAgent
@@ -255,6 +258,9 @@ class BuiltServices:
     review_console: ReviewConsoleService
     demand_engine: DemandMatchingEngine
     price_estimator: PriceEstimator
+    notification_repo: DynamoDbNotificationRepository
+    notification_service: NotificationService
+    notification_worker: NotificationWorker
 
 
 def build_services(settings: Settings) -> BuiltServices:
@@ -283,6 +289,9 @@ def build_services(settings: Settings) -> BuiltServices:
     )
     review_repo = DynamoReviewQueueRepository(
         settings.table_name, dynamodb_resource=dynamodb_resource
+    )
+    notification_repo = DynamoDbNotificationRepository(
+        dynamodb_resource.Table(settings.table_name)
     )
     from botocore.config import Config
     object_store = S3ObjectStore(
@@ -338,6 +347,9 @@ def build_services(settings: Settings) -> BuiltServices:
         eventing=eventing,
         top_n=settings.top_n,
     )
+    
+    notification_service = NotificationService(repository=notification_repo)
+    notification_worker = NotificationWorker(repository=notification_repo, item_repo=item_repo)
 
     services = Services(
         item_service=item_service,
@@ -348,6 +360,7 @@ def build_services(settings: Settings) -> BuiltServices:
         card_service=card_service,
         matching=demand_engine,
         review=review_console,
+        notification_service=notification_service,
     )
 
     return BuiltServices(
@@ -365,6 +378,9 @@ def build_services(settings: Settings) -> BuiltServices:
         review_console=review_console,
         demand_engine=demand_engine,
         price_estimator=price_estimator,
+        notification_repo=notification_repo,
+        notification_service=notification_service,
+        notification_worker=notification_worker,
     )
 
 

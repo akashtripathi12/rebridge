@@ -34,7 +34,7 @@ export function HealthCard({
 }) {
   const [origin, setOrigin] = useState("");
   useEffect(() => setOrigin(window.location.origin), []);
-  const qrValue = `${origin}/card/${card.item_id}`;
+  const qrValue = card.qr_target || "";
 
   return (
     <div
@@ -132,15 +132,17 @@ export function HealthCard({
       </div>
 
       {/* footer: real QR + signature */}
-      <div className="flex items-center gap-3 border-t border-dashed border-hair px-[18px] py-3">
-        <QrCode value={qrValue} size={72} />
-        <div className="text-[11px] leading-[1.55] text-mute">
-          <b className="mb-0.5 flex items-center gap-1 font-mono text-[12px] text-ink">
-            <ShieldCheck className="h-3.5 w-3.5 text-trust" /> Scan to verify
-          </b>
-          HMAC-signed, tamper-evident. Anyone can check — no account needed.
+      {qrValue ? (
+        <div className="flex items-center gap-3 border-t border-dashed border-hair px-[18px] py-3">
+          <QrCode value={qrValue} size={72} />
+          <div className="text-[11px] leading-[1.55] text-mute">
+            <b className="mb-0.5 flex items-center gap-1 font-mono text-[12px] text-ink">
+              <ShieldCheck className="h-3.5 w-3.5 text-trust" /> Scan to verify
+            </b>
+            HMAC-signed, tamper-evident. Anyone can check — no account needed.
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* price + reserve */}
       {showActions ? (

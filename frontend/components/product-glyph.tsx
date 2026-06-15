@@ -4,34 +4,71 @@
  * dark studio backdrop). Falls back to the v2 SVG stand-ins for unknown kinds.
  */
 
+import { useState } from "react";
+
 const REAL_PHOTO_KINDS = new Set(["shoe", "monitor", "earbuds", "books"]);
+
+export const THUMB_BY_CATEGORY: Record<string, string> = {
+  shoes: "shoe",
+  baby: "shoe",
+  tech: "monitor",
+  electronics: "earbuds",
+  books: "books",
+  apparel: "shoe",
+  home: "shoe",
+  toys: "shoe",
+};
 
 export function ProductGlyph({
   kind,
+  fallbackCategory,
   className,
 }: {
   kind: string;
+  fallbackCategory?: string;
   className?: string;
 }) {
-  if (kind.startsWith("http") || kind.startsWith("blob:")) {
+  const [imgError, setImgError] = useState(false);
+
+  let effectiveKind = kind;
+  if (!imgError && kind && !kind.startsWith("http") && !kind.startsWith("blob:") && !REAL_PHOTO_KINDS.has(kind) && !["monitor", "earbuds", "books", "shoe"].includes(kind)) {
+    // It's likely a raw S3 key (e.g. 'items/123/photo-1').
+    // Use the Next.js rewrite proxy to avoid cross-origin / mixed-content issues
+    // when the browser resolves 'localhost' differently than the API container.
+    effectiveKind = `/api/proxy/photos/${kind}`;
+  }
+
+  if (imgError || (!effectiveKind.startsWith("http") && !effectiveKind.startsWith("blob:") && !effectiveKind.startsWith("/api/proxy/") && !REAL_PHOTO_KINDS.has(effectiveKind) && !["monitor", "earbuds", "books", "shoe"].includes(effectiveKind))) {
+    if (fallbackCategory && THUMB_BY_CATEGORY[fallbackCategory.toLowerCase()]) {
+      effectiveKind = THUMB_BY_CATEGORY[fallbackCategory.toLowerCase()];
+    } else {
+      effectiveKind = "shoe";
+    }
+  }
+
+  if (!imgError && (effectiveKind.startsWith("http") || effectiveKind.startsWith("blob:") || effectiveKind.startsWith("/api/proxy/"))) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={kind}
+        src={effectiveKind}
         alt=""
         aria-hidden
         loading="lazy"
         decoding="async"
         className={`object-contain ${className ?? ""}`}
+        onError={(e) => {
+          console.error("Image failed to load! src:", effectiveKind, "event:", e);
+          setImgError(true);
+        }}
       />
     );
   }
 
-  if (REAL_PHOTO_KINDS.has(kind)) {
+  if (REAL_PHOTO_KINDS.has(effectiveKind)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={`/products/${kind}.png`}
+        src={`/products/${effectiveKind}.png`}
         alt=""
         aria-hidden
         loading="lazy"
@@ -41,7 +78,7 @@ export function ProductGlyph({
     );
   }
 
-  switch (kind) {
+  switch (effectiveKind) {
     case "monitor":
       return (
         <svg viewBox="0 0 160 90" className={className} aria-hidden>

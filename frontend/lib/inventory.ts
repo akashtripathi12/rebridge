@@ -120,7 +120,10 @@ export function useInventory(): InventoryState {
       listeners.add(cb);
       return () => listeners.delete(cb);
     },
-    () => state,
+    () => {
+      ensureHydrated();
+      return state;
+    },
     () => empty,
   );
 }

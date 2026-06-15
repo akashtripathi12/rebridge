@@ -208,3 +208,18 @@ class BuyerPersona:
     intent: float = 0.0
     lifecycle: float = 0.0
     price_sensitivity: float = 0.0
+
+
+@dataclass
+class NotificationRecord:
+    """NOTIF facet: ``USER#<user_id>`` / ``NOTIF#<notif_id>``."""
+
+    notif_id: str
+    user_id: str
+    variant: str  # "buyer" | "seller" | "system"
+    title: str
+    body: str
+    created_at: str
+    unread: bool = True
+    meta_text: str | None = None
+    href: str | None = None

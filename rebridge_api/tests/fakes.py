@@ -183,6 +183,14 @@ class FakeObjectStore(ObjectStore):
     def get_bytes(self, key: str) -> bytes:
         return self._objects[key]
 
+    def presign_get(self, key: str, ttl_seconds: int = 300) -> PresignedUrl:
+        return PresignedUrl(
+            url=f"https://fake-bucket.local/{key}?signed=true",
+            method="GET",
+            headers={},
+            expires_in=ttl_seconds,
+        )
+
 
 class FakeQueueClient(QueueClient):
     """In-memory grading work queue capturing enqueued messages."""

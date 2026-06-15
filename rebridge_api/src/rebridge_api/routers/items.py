@@ -10,6 +10,7 @@ response.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Response, status
+from fastapi.responses import RedirectResponse
 
 from rebridge_data.models import GradingMessage
 
@@ -135,6 +136,20 @@ def get_item(
 
     aggregate = services.item_service.get_item(item_id)
     return ItemAggregateResponse.from_aggregate(aggregate)
+
+
+@router.get("/photos/{photo_key:path}")
+def get_photo(
+    photo_key: str,
+    services: Services = Depends(get_services),
+):
+    """Redirect to a presigned S3 GET URL to serve images to the frontend."""
+    try:
+        url = services.item_service.get_photo_url(photo_key)
+        return RedirectResponse(url)
+    except Exception as e:
+        import traceback
+        return Response(content=traceback.format_exc(), status_code=500, media_type="text/plain")
 
 
 @router.post("/items/{item_id}/route", response_model=RouteDecisionResponse)

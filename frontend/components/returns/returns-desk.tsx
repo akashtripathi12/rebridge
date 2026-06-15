@@ -30,6 +30,7 @@ export function ReturnsDesk() {
   const [phase, setPhase] = useState<Phase>("capture");
   const [shots, setShots] = useState<Shot[]>([]);
   const [simBlurry, setSimBlurry] = useState(false);
+  const [originalPrice, setOriginalPrice] = useState("");
   const [errMsg, setErrMsg] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -52,6 +53,8 @@ export function ReturnsDesk() {
         context_source: "order_scan",
         category: DEMO_ITEM.category,
         age_months: DEMO_ITEM.age_months,
+        original_price: originalPrice ? Number(originalPrice) : undefined,
+        expected_price: originalPrice ? Number(originalPrice) : undefined,
         order_id: DEMO_ITEM.order_id,
         item_id: DEMO_ITEM_ID, // deterministic spine id (mock honours)
       });
@@ -100,10 +103,25 @@ export function ReturnsDesk() {
   return (
     <PhoneFrame where="Returns · Hub BLR-4">
       <div className="flex flex-1 flex-col px-4 pb-5">
-        <div className="mb-2 flex flex-wrap gap-2">
-          <StatChip label="Order" value={DEMO_ITEM.order_id} />
-          <StatChip label="Category" value="Shoes" />
-          <StatChip label="Age" value="8 mo" />
+        <div className="mb-2 flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            <StatChip label="Order" value={DEMO_ITEM.order_id} />
+            <StatChip label="Category" value="Shoes" />
+            <StatChip label="Age" value="8 mo" />
+          </div>
+          <label className="flex flex-col gap-1.5 mt-2">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-stone">
+              Original price (₹)
+            </span>
+            <input
+              data-testid="original-price-input"
+              type="number"
+              value={originalPrice}
+              onChange={(e) => setOriginalPrice(e.target.value)}
+              placeholder="e.g. 5000"
+              className="w-full rounded-input border border-hair bg-white px-3 py-2.5 font-sans text-[13.5px] focus:border-ink focus:outline-none"
+            />
+          </label>
         </div>
 
         <DarkStage ghost="SCAN" className="relative mt-1 h-[230px]" rounded="rounded-[24px]">

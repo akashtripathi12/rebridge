@@ -27,6 +27,7 @@ from rebridge_data.models import (
     LifecycleEvent,
     ListingPatch,
     ListingRecord,
+    NotificationRecord,
     PresignedUrl,
     RawModelResponse,
     ReviewQueueEntry,
@@ -35,6 +36,7 @@ from rebridge_data.models import (
 __all__ = [
     "ItemRepository",
     "ReviewQueueRepository",
+    "NotificationRepository",
     "ObjectStore",
     "QueueClient",
     "CardSigner",
@@ -158,6 +160,10 @@ class ObjectStore(ABC):
         """Issue a presigned upload URL expiring after ``ttl_seconds`` (default 300)."""
 
     @abstractmethod
+    def presign_get(self, key: str, ttl_seconds: int = 3600) -> PresignedUrl:
+        """Issue a presigned download URL expiring after ``ttl_seconds`` (default 3600)."""
+
+    @abstractmethod
     def get_bytes(self, key: str) -> bytes:
         """Fetch the raw bytes of a stored object."""
 
@@ -240,3 +246,23 @@ class SecondChanceShelf(ABC):
     @abstractmethod
     def upsert(self, item_id: str) -> None:
         """Create or update the Second-Chance PDP shelf placement for ``item_id``."""
+
+
+class NotificationRepository(ABC):
+    """Persistence for user notifications."""
+
+    @abstractmethod
+    def put_notification(self, notif: NotificationRecord) -> None:
+        """Create a notification record for a user."""
+
+    @abstractmethod
+    def get_user_notifications(self, user_id: str, limit: int = 50) -> list[NotificationRecord]:
+        """Return the latest notifications for a user, sorted descending by created_at."""
+
+    @abstractmethod
+    def mark_read(self, user_id: str, notif_id: str) -> None:
+        """Mark a specific notification as read."""
+
+    @abstractmethod
+    def mark_all_read(self, user_id: str) -> None:
+        """Mark all notifications for a user as read."""

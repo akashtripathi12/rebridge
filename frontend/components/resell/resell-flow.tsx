@@ -125,8 +125,18 @@ export function ResellFlow() {
   const decision = poll.data?.decision ?? null;
   const previewUrl = itemId ? sessionStorage.getItem(`rb:photo:${itemId}`) : null;
 
-  const list = () => {
+  const list = async () => {
     if (!grade || !decision || !itemId) return;
+    try {
+      await itemsService.createListing({
+        item_id: itemId,
+        category,
+        price: decision.price,
+        geohash5: "tdr1v",
+      });
+    } catch (e) {
+      console.error("Failed to create listing", e);
+    }
     inventory.addListing({
       item_id: itemId,
       title,
@@ -135,34 +145,16 @@ export function ResellFlow() {
       confidence: grade.confidence,
       price: decision.price,
       price_new: decision.price_new ?? undefined,
-      thumb_key: sessionStorage.getItem(`rb:photo:${itemId}`) || poll.data?.card?.annotated_photo_keys?.[0] || THUMB_BY_CATEGORY[category],
+      thumb_key: poll.data?.card?.annotated_photo_keys?.[0] || sessionStorage.getItem(`rb:photo:${itemId}`) || THUMB_BY_CATEGORY[category],
       health_card_id: poll.data?.card?.card_id ?? `card_${itemId.slice(0, 6)}`,
       status: "LISTED",
       listed_at: new Date().toISOString(),
     });
     const matchCount = matches.data?.match_count_within_5km ?? 0;
     
-    // 1. Notify the seller that their item was routed
-    notifs.notifySellerOfRouting({
-      title,
-      grade: grade.grade,
-      price: formatMoney(decision.price),
-      matchCount,
-    });
-
-    // 2. Notify nearby buyers that a matched item is available
-    if (matchCount > 0) {
-      const topMatch = matches.data?.matches[0];
-      notifs.notifyBuyersOfNewListing({
-        title,
-        grade: grade.grade,
-        price: formatMoney(decision.price),
-        itemId,
-        matchCount,
-        topDistance: topMatch?.distance_km,
-        topReason: topMatch?.match_reasons?.[0],
-      });
-    }
+    // Notifications are now emitted by the backend via EventBridge when the 
+    // listing is created and matching occurs.
+    
     setStage("listed");
   };
 
@@ -285,7 +277,7 @@ export function ResellFlow() {
 
   if (stage === "grading") {
     return (
-      <GradingView previewUrl={previewUrl} />
+      <GradingView previewUrl={previewUrl} category={category} />
     );
   }
 
@@ -484,7 +476,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function GradingView({ previewUrl }: { previewUrl: string | null }) {
+function GradingView({ previewUrl, category }: { previewUrl: string | null; category: Category }) {
   return (
     <div className="grid gap-8 lg:grid-cols-[1.05fr_minmax(0,420px)]">
       <div className="relative grid aspect-[4/3] place-items-center overflow-hidden rounded-card border border-hair bg-paper">
@@ -496,7 +488,7 @@ function GradingView({ previewUrl }: { previewUrl: string | null }) {
             className="absolute inset-0 h-full w-full object-contain p-4"
           />
         ) : (
-          <ProductGlyph kind="shoe" className="w-[55%]" />
+          <ProductGlyph kind={THUMB_BY_CATEGORY[category]} className="w-[55%]" />
         )}
         <div
           data-testid="scan-line"

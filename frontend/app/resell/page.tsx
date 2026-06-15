@@ -1,10 +1,12 @@
 "use client";
 
 import { ResellFlow } from "@/components/resell/resell-flow";
+import { RoleRouteGuard } from "@/components/chrome/role-route-guard";
 
 export default function ResellPage() {
   return (
-    <main className="bg-canvas px-4 py-10 sm:px-6">
+    <RoleRouteGuard allow="customer">
+      <main className="bg-canvas px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-[1200px]">
         <div>
           <div className="font-sans text-[12px] font-bold uppercase tracking-[0.2em] text-amber-deep">
@@ -24,5 +26,6 @@ export default function ResellPage() {
         </div>
       </div>
     </main>
+    </RoleRouteGuard>
   );
 }

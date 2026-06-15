@@ -169,7 +169,7 @@ function AuthControl() {
         data-testid="nav-signout"
         onClick={() => {
           sessionStore.logout();
-          router.replace("/");
+          window.location.href = "/";
         }}
         aria-label="Sign out"
         className="rounded-pill p-2 text-mute hover:text-ink"

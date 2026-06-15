@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, type Role } from "@/lib/session";
 
@@ -25,15 +25,19 @@ export function RoleRouteGuard({
   const pathname = usePathname() ?? "/";
   const router = useRouter();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
+    if (!mounted) return;
     if (session === null) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     } else if (session.role !== allow) {
       router.replace(landingFor(session.role));
     }
-  }, [session, allow, pathname, router]);
+  }, [session, allow, pathname, router, mounted]);
 
-  if (!session || session.role !== allow) {
+  if (!mounted || !session || session.role !== allow) {
     return (
       <div
         data-testid="route-guard-pending"

@@ -106,6 +106,7 @@ function RecommendedCard({ item }: { item: ScoredItem }) {
       <div className="relative grid aspect-[4/3] place-items-center overflow-hidden bg-black">
         <ProductGlyph
           kind={item.thumb_key}
+          fallbackCategory={item.category}
           className="w-[58%] transition-transform duration-300 group-hover:scale-105"
         />
         {/* Recommendation reason badge */}

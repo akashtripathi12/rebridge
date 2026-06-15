@@ -8,7 +8,8 @@ export const MARKETPLACE_ALL_CATEGORY = "all";
 
 /** Buyer-facing category chips. "For you" triggers recommendation sections. */
 export const MARKET_CATEGORIES: { id: string; label: string }[] = [
-  { id: MARKETPLACE_ALL_CATEGORY, label: "For you ✨" },
+  { id: "for_you", label: "For you ✨" },
+  { id: MARKETPLACE_ALL_CATEGORY, label: "All" },
   { id: "baby", label: "Baby & kids" },
   { id: "shoes", label: "Shoes" },
   { id: "tech", label: "Tech" },

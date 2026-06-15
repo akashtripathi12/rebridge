@@ -64,7 +64,7 @@ def query_marketplace(
             else seeded_distance_km(rec.item_id)
         )
         
-        thumb_key = "shoe"
+        thumb_key = rec.category
         if agg and agg.card and agg.card.annotated_photo_keys:
             thumb_key = agg.card.annotated_photo_keys[0]
             
@@ -93,14 +93,21 @@ def _query_records(
     # de-duplicating by item_id, then bound by limit.
     seen: set[str] = set()
     merged: list[ListingRecord] = []
+    
+    # Fetch up to `limit` from each category, then interleave them
+    category_results = []
     for known in KNOWN_CATEGORIES:
-        for rec in services.item_repo.query_marketplace(known, geo, limit):
-            if rec.item_id in seen:
-                continue
-            seen.add(rec.item_id)
-            merged.append(rec)
-            if len(merged) >= limit:
-                return merged
+        category_results.append(services.item_repo.query_marketplace(known, geo, limit))
+        
+    for i in range(limit):
+        for recs in category_results:
+            if i < len(recs):
+                rec = recs[i]
+                if rec.item_id not in seen:
+                    seen.add(rec.item_id)
+                    merged.append(rec)
+                    if len(merged) >= limit:
+                        return merged
     return merged
 
 

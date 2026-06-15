@@ -11,7 +11,6 @@ import { Price } from "@/components/ui/price";
 import { ProductGlyph } from "@/components/product-glyph";
 import { healthCardService, matchingService } from "@/lib/services";
 import { inventory } from "@/lib/inventory";
-import { notifs } from "@/lib/notifications";
 import { formatDistance } from "@/lib/format";
 import { ArrowLeft, Check, MapPin, ShieldCheck, Truck } from "lucide-react";
 
@@ -56,22 +55,7 @@ export default function ProductDetailPage() {
       reserved_at: new Date().toISOString(),
       pickup_at: "Tomorrow · 10:00–12:00",
     });
-    notifs.add({
-      variant: "buyer",
-      title: "Reserved",
-      body: `${card.data.title} — pickup scheduled tomorrow 10–12, ${formatDistance(distance)} away.`,
-      meta: "just now",
-      href: `/product/${card.data.item_id}`,
-    });
-    
-    // Notify the seller that a buyer has reserved their item
-    notifs.notifySellerOfInterest({
-      title: card.data.title,
-      grade: card.data.grade,
-      price: card.data.price,
-      buyerDistance: distance,
-      itemId: card.data.item_id,
-    });
+
     setReserved(true);
   };
 
@@ -121,6 +105,7 @@ export default function ProductDetailPage() {
               <div className="grid aspect-[16/11] w-full place-items-center overflow-hidden rounded-card border border-white/10 bg-[radial-gradient(140%_120%_at_30%_8%,#2a2a2e,#161618_60%,#0e0e10)]">
                 <ProductGlyph
                   kind={c.images?.[activeImageIndex] || c.thumb_key}
+                  fallbackCategory={c.title}
                   className="w-[55%] drop-shadow-[0_30px_36px_rgba(0,0,0,0.55)]"
                 />
               </div>
@@ -135,7 +120,7 @@ export default function ProductDetailPage() {
                         activeImageIndex === idx ? "border-trust ring-2 ring-trust/20" : "border-white/10 opacity-60 hover:opacity-100"
                       }`}
                     >
-                      <ProductGlyph kind={img} className="w-[60%]" />
+                      <ProductGlyph kind={img} fallbackCategory={c.title} className="w-[60%]" />
                     </button>
                   ))}
                 </div>
