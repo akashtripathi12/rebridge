@@ -1,12 +1,11 @@
 "use client";
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   AdaptiveDpr,
   ContactShadows,
   Environment,
   Float,
-  PresentationControls,
   Preload,
   useTexture,
 } from "@react-three/drei";
@@ -89,24 +88,6 @@ function useRadialGlow() {
 }
 
 /**
- * Cursor-reactive tilt — independent of PresentationControls so the resting
- * pose breathes with the mouse even when no drag is happening. Inertial lerp
- * keeps it smooth, never robotic.
- */
-function CursorTilt({ children }: { children: React.ReactNode }) {
-  const group = useRef<THREE.Group>(null);
-  const { pointer } = useThree();
-  useFrame(() => {
-    if (!group.current) return;
-    const targetX = pointer.y * 0.12;
-    const targetY = pointer.x * 0.26;
-    group.current.rotation.x += (targetX - group.current.rotation.x) * 0.05;
-    group.current.rotation.y += (targetY - group.current.rotation.y) * 0.05;
-  });
-  return <group ref={group}>{children}</group>;
-}
-
-/**
  * Decorative orbital rings — thin amber tori drifting behind the product.
  * Reinforce the "circular / second life" idea without printing the word on the
  * page. Pure decoration; opacity stays low.
@@ -128,11 +109,11 @@ function OrbitRings() {
   return (
     <group position={[0, -0.15, -0.5]}>
       <mesh ref={a}>
-        <torusGeometry args={[2.0, 0.009, 16, 180]} />
+        <torusGeometry args={[1.55, 0.011, 16, 180]} />
         <meshBasicMaterial color="#FF9900" transparent opacity={0.28} />
       </mesh>
       <mesh ref={b}>
-        <torusGeometry args={[2.5, 0.006, 16, 180]} />
+        <torusGeometry args={[1.9, 0.008, 16, 180]} />
         <meshBasicMaterial color="#D97A00" transparent opacity={0.16} />
       </mesh>
     </group>
@@ -177,33 +158,25 @@ export function HeroScene({ onReady }: { onReady?: () => void }) {
     <Canvas
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-      camera={{ position: [0, 0, 5], fov: 32 }}
+      camera={{ position: [0, 0, 7], fov: 32 }}
       style={{ background: "transparent" }}
     >
       {lights}
 
       <Suspense fallback={null}>
         <Entrance>
-          <PresentationControls
-            global
-            cursor
-            snap
-            polar={[-0.35, 0.35]}
-            azimuth={[-0.7, 0.7]}
-            config={{ mass: 2.6, tension: 170, friction: 28 }}
+          {/* Float only — no drag/tilt controls. The product is a flat billboard,
+              so any user-driven rotation would expose its lack of depth; a gentle
+              hover keeps it alive without revealing the plane. */}
+          <Float
+            speed={1.15}
+            rotationIntensity={0.2}
+            floatIntensity={0.6}
+            floatingRange={[-0.09, 0.09]}
           >
-            <Float
-              speed={1.15}
-              rotationIntensity={0.2}
-              floatIntensity={0.6}
-              floatingRange={[-0.09, 0.09]}
-            >
-              <CursorTilt>
-                <ProductBillboard onReady={onReady} />
-                <OrbitRings />
-              </CursorTilt>
-            </Float>
-          </PresentationControls>
+            <ProductBillboard onReady={onReady} />
+            <OrbitRings />
+          </Float>
         </Entrance>
 
         {/* Soft grounding shadow under the floating object. */}

@@ -16,6 +16,7 @@ from rebridge_data.models import GradingMessage
 from rebridge_api.dependencies import (
     CurrentUser,
     Services,
+    get_current_operator,
     get_current_user,
     get_services,
 )
@@ -43,7 +44,7 @@ router = APIRouter(tags=["items"])
 def create_item(
     body: CreateItemRequest,
     services: Services = Depends(get_services),
-    _user: CurrentUser = Depends(get_current_user),
+    _user: CurrentUser = Depends(get_current_operator),
 ) -> ItemMetaResponse:
     """Create an Item from an order-scan or manual context (Req 1.1, 1.2, 1.3).
 
@@ -63,7 +64,7 @@ def presign_photos(
     item_id: str,
     body: PresignRequest,
     services: Services = Depends(get_services),
-    _user: CurrentUser = Depends(get_current_user),
+    _user: CurrentUser = Depends(get_current_operator),
 ) -> PresignResponse:
     """Issue ``count`` presigned PUT URLs (2-4, 5-min TTL) (Req 2.1, 2.4).
 
@@ -93,7 +94,7 @@ def enqueue_grade(
     body: GradeRequest,
     response: Response,
     services: Services = Depends(get_services),
-    _user: CurrentUser = Depends(get_current_user),
+    _user: CurrentUser = Depends(get_current_operator),
 ) -> GradeAcceptedResponse:
     """Enqueue an async grading submission; return 202 + Idempotency-Key (Req 7.1, 7.2).
 
@@ -141,7 +142,7 @@ def route_item(
     item_id: str,
     body: RouteRequest | None = None,
     services: Services = Depends(get_services),
-    _user: CurrentUser = Depends(get_current_user),
+    _user: CurrentUser = Depends(get_current_operator),
 ) -> RouteDecisionResponse:
     """Run the routing decision for a graded Item (Requirement 10).
 

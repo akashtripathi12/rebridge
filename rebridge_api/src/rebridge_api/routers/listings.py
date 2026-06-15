@@ -19,6 +19,7 @@ from rebridge_data.models import ItemStatus
 from rebridge_api.dependencies import (
     CurrentUser,
     Services,
+    get_current_operator,
     get_current_user,
     get_services,
 )
@@ -41,7 +42,7 @@ router = APIRouter(tags=["listings"])
 def create_listing(
     body: CreateListingRequest,
     services: Services = Depends(get_services),
-    _user: CurrentUser = Depends(get_current_user),
+    _user: CurrentUser = Depends(get_current_operator),
 ) -> ListingResponse:
     """Create the LISTING facet for a graded Item (Req 3.1, 3.5, 15.3).
 
@@ -95,7 +96,7 @@ def update_listing(
     item_id: str,
     body: UpdateListingRequest,
     services: Services = Depends(get_services),
-    _user: CurrentUser = Depends(get_current_user),
+    _user: CurrentUser = Depends(get_current_operator),
 ) -> ListingResponse:
     """Apply a partial update to an existing listing (Requirement 3.2).
 
@@ -110,7 +111,7 @@ def update_listing(
 def delete_listing(
     item_id: str,
     services: Services = Depends(get_services),
-    _user: CurrentUser = Depends(get_current_user),
+    _user: CurrentUser = Depends(get_current_operator),
 ) -> Response:
     """Remove the LISTING facet for an Item (Requirement 3.4). Unknown Item -> 404."""
 

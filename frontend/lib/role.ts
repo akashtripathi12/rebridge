@@ -1,65 +1,32 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { sessionStore, useSession, type Role } from "./session";
 
 /**
- * Viewer role — Customer (default) or Operator. Persisted in localStorage. In
- * production this will come from auth; today it's a manual switcher in the nav,
- * which is exactly what the brief asks for ("a button to switch between operator
- * and customer; later we will show the site based on auth").
+ * Viewer role — Customer (default) or Operator. The role now comes from the
+ * signed-in session (`custom:role`), not a free-floating toggle: it is set at
+ * registration and recovered on login. `roleStore`/`useRole` are kept as the
+ * stable read API the existing chrome uses, but they are thin views over the
+ * session so role and identity can never drift apart.
+ *
+ * The in-nav switch (`roleStore.set`) remains for the demo only; in production
+ * role changes happen in Cognito, not the client.
  */
-export type Role = "customer" | "operator";
-
-const KEY = "rb:role";
-let role: Role = "customer";
-const listeners = new Set<() => void>();
-
-function load(): Role {
-  if (typeof window === "undefined") return "customer";
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    return raw === "operator" ? "operator" : "customer";
-  } catch {
-    return "customer";
-  }
-}
-
-let hydrated = false;
-function ensureHydrated() {
-  if (!hydrated && typeof window !== "undefined") {
-    role = load();
-    hydrated = true;
-  }
-}
+export type { Role };
 
 export const roleStore = {
   get(): Role {
-    ensureHydrated();
-    return role;
+    return sessionStore.get()?.role ?? "customer";
   },
   set(next: Role) {
-    ensureHydrated();
-    if (role === next) return;
-    role = next;
-    try {
-      window.localStorage.setItem(KEY, next);
-    } catch {
-      /* ignore */
-    }
-    listeners.forEach((l) => l());
+    sessionStore.setRole(next);
   },
   toggle() {
-    this.set(role === "customer" ? "operator" : "customer");
+    this.set(this.get() === "customer" ? "operator" : "customer");
   },
 };
 
 export function useRole(): Role {
-  return useSyncExternalStore(
-    (cb) => {
-      listeners.add(cb);
-      return () => listeners.delete(cb);
-    },
-    () => role,
-    () => "customer",
-  );
+  const session = useSession();
+  return session?.role ?? "customer";
 }

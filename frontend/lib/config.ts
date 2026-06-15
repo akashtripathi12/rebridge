@@ -28,6 +28,12 @@ export const config = {
     userPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || "",
     appClientId: process.env.NEXT_PUBLIC_COGNITO_APP_CLIENT_ID || "",
   },
+
+  // Operator self-signup. Open for the demo so both roles can be created from one
+  // form; set NEXT_PUBLIC_ALLOW_OPERATOR_SIGNUP=false in production, where
+  // operator accounts are invite-only (provisioned into the Cognito group by an
+  // admin, never self-served).
+  allowOperatorSignup: process.env.NEXT_PUBLIC_ALLOW_OPERATOR_SIGNUP !== "false",
 } as const;
 
 /** Grade label union — verbatim from the backend Grade enum. */

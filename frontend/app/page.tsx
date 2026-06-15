@@ -3,6 +3,7 @@ import { HowItWorks } from "@/components/landing/how-it-works";
 import { LiveDemo } from "@/components/landing/live-demo";
 import { EconomicsDeep } from "@/components/landing/economics-deep";
 import { TrustBand } from "@/components/landing/trust-band";
+import { HomeRoleRedirect } from "@/components/chrome/home-role-redirect";
 
 /**
  * The real product landing: hero → how it works → live ₹3 demo → unit economics →
@@ -13,6 +14,7 @@ import { TrustBand } from "@/components/landing/trust-band";
 export default function Home() {
   return (
     <main data-testid="landing">
+      <HomeRoleRedirect />
       <Hero />
       <HowItWorks />
       <LiveDemo />
