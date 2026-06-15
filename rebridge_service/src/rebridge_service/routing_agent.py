@@ -429,7 +429,13 @@ class RoutingAgent:
 
         meta = aggregate.meta
         grade = self._grade_of(aggregate.grade.grade)
-        band = self.price.estimate(meta.category, grade, meta.age_months, meta.expected_price)
+        band = self.price.estimate(
+            meta.category, 
+            grade, 
+            meta.age_months, 
+            original_price=meta.original_price, 
+            expected_price=meta.expected_price
+        )
 
         path_values = dict(self.value_model(band))
         path_costs = {

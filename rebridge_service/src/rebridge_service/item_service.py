@@ -259,6 +259,9 @@ class ItemService:
         item_id = self.id_factory()
         expected_price_raw = request.get("expected_price")
         expected_price = Decimal(str(expected_price_raw)) if expected_price_raw is not None else None
+        
+        original_price_raw = request.get("original_price")
+        original_price = Decimal(str(original_price_raw)) if original_price_raw is not None else None
 
         meta = ItemMeta(
             item_id=item_id,
@@ -268,6 +271,7 @@ class ItemService:
             context_source=context_source,
             created_at=self.clock().isoformat(),
             context_ref=request.get("order_id") if context_source == ORDER_SCAN else None,
+            original_price=original_price,
             expected_price=expected_price,
         )
         self.item_repo.put_item_meta(meta)

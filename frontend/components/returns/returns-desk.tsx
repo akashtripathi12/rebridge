@@ -154,7 +154,7 @@ export function ReturnsDesk() {
                   <img
                     src={shot.url}
                     alt={`Shot ${i + 1}`}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                     data-testid="thumb"
                   />
                 ) : (

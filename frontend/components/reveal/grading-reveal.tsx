@@ -163,12 +163,12 @@ export function GradingReveal({
             <img
               src={imageUrl}
               alt="Captured item"
-              className="relative h-[78%] w-[78%] object-contain drop-shadow-[0_24px_30px_rgba(0,0,0,0.5)]"
+              className="absolute inset-0 h-full w-full p-6 object-contain drop-shadow-[0_24px_30px_rgba(0,0,0,0.5)]"
             />
           ) : (
             <ProductGlyph
               kind={productKind}
-              className="relative w-[78%] drop-shadow-[0_24px_30px_rgba(0,0,0,0.5)]"
+              className="absolute inset-0 h-full w-full p-6 object-contain drop-shadow-[0_24px_30px_rgba(0,0,0,0.5)]"
             />
           )}
 

@@ -167,6 +167,7 @@ class PriceEstimator:
         category: str,
         grade: Grade | str,
         age_months: int,
+        original_price: Decimal | None = None,
         expected_price: Decimal | None = None,
     ) -> PriceBand:
         """Return the price band for ``(category, grade, age_months)``.
@@ -174,9 +175,11 @@ class PriceEstimator:
         ``grade`` may be a :class:`~rebridge_service.models.Grade` member or its
         label/name. ``category`` matching is case-insensitive. Falls back to the
         :data:`DEFAULT_CATEGORY` table entry when the category is unknown.
-        If ``expected_price`` is provided, it is used as the base reference price
-        instead of the static lookup table, applying the same relative depreciation
-        multipliers.
+        
+        If ``original_price`` is provided, it calculates True Market Value (TMV)
+        using the relative depreciation multipliers from the lookup table.
+        If ``expected_price`` is also provided, it blends the user's expected
+        price with the TMV.
         """
 
         cat = _normalize_category(category)
@@ -193,14 +196,31 @@ class PriceEstimator:
                 f"age_bucket={bucket!r} (and no {DEFAULT_CATEGORY!r} fallback)"
             )
 
-        if expected_price is not None:
+        if original_price is not None:
             ref_band = self._table.get((band.category, Grade.LIKE_NEW.value, "0-6"))
             if ref_band and ref_band.point > 0:
                 multiplier = band.point / ref_band.point
-                point = (expected_price * multiplier).quantize(Decimal("0.01"))
-                # Using 15% spread as defined in the system
-                low = (point * Decimal("0.85")).quantize(Decimal("0.01"))
-                high = (point * Decimal("1.15")).quantize(Decimal("0.01"))
+                tmv = (original_price * multiplier).quantize(Decimal("0.01"))
+                
+                point = tmv
+                low = (tmv * Decimal("0.85")).quantize(Decimal("0.01"))
+                high = (tmv * Decimal("1.15")).quantize(Decimal("0.01"))
+                
+                if expected_price is not None:
+                    # Blending logic
+                    if expected_price > tmv * Decimal("1.15"):
+                        # Overpriced: ignore their unrealistic expectation to protect unit economics.
+                        # The point and high/low bands remain anchored to TMV.
+                        pass
+                    elif expected_price < tmv * Decimal("0.85"):
+                        # Underpriced: ignore their lowball expectation to protect the seller.
+                        pass
+                    else:
+                        # Realistic: within 15%, so use their expected price as point
+                        point = expected_price
+                        low = (point * Decimal("0.85")).quantize(Decimal("0.01"))
+                        high = (point * Decimal("1.15")).quantize(Decimal("0.01"))
+                        
                 return PriceBand(
                     category=band.category,
                     grade=band.grade,

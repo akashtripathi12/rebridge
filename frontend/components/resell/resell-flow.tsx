@@ -40,7 +40,6 @@ const THUMB_BY_CATEGORY: Record<Category, string> = {
 };
 
 type Stage = "capture" | "grading" | "verdict" | "retake" | "listed";
-
 /**
  * ResellFlow — the working seller experience. Real page (not phone-mock):
  * capture stage on the left with a contextual order/category/age form on the
@@ -57,6 +56,7 @@ export function ResellFlow() {
   const contextSource = "manual" as const;
   const [title, setTitle] = useState("Running Shoes · UK 7");
   const [simBlurry, setSimBlurry] = useState(false);
+  const [originalPrice, setOriginalPrice] = useState("");
   const [expectedPrice, setExpectedPrice] = useState("");
   const [itemId, setItemId] = useState<string | null>(null);
 
@@ -71,7 +71,8 @@ export function ResellFlow() {
   };
   const removeShot = (id: string) => setShots((s) => s.filter((x) => x.id !== id));
 
-  const canGrade = shots.length >= 2 && title.trim().length > 0;
+  const isPriceValid = !expectedPrice || !originalPrice || Number(expectedPrice) <= Number(originalPrice);
+  const canGrade = shots.length >= 2 && title.trim().length > 0 && isPriceValid;
 
   const startGrade = useCallback(async () => {
     try {
@@ -80,6 +81,7 @@ export function ResellFlow() {
         context_source: contextSource,
         category,
         age_months: ageMonths,
+        original_price: originalPrice ? Number(originalPrice) : undefined,
         expected_price: expectedPrice ? Number(expectedPrice) : undefined,
       });
       const presign = await itemsService.presignPhotos(meta.item_id, shots.length);
@@ -187,16 +189,34 @@ export function ResellFlow() {
             />
           </Field>
 
-          <Field label="Expected price (₹)">
-            <input
-              data-testid="price-input"
-              type="number"
-              value={expectedPrice}
-              onChange={(e) => setExpectedPrice(e.target.value)}
-              placeholder="e.g. 2500"
-              className="w-full rounded-input border border-hair bg-white px-3 py-2.5 font-sans text-[13.5px] focus:border-ink focus:outline-none"
-            />
-          </Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Original price (₹)">
+              <input
+                data-testid="original-price-input"
+                type="number"
+                value={originalPrice}
+                onChange={(e) => setOriginalPrice(e.target.value)}
+                placeholder="e.g. 5000"
+                className={`w-full rounded-input border ${!isPriceValid && originalPrice ? 'border-sale text-sale focus:border-sale' : 'border-hair focus:border-ink'} bg-white px-3 py-2.5 font-sans text-[13.5px] focus:outline-none`}
+              />
+            </Field>
+
+            <Field label="Expected price (₹)">
+              <input
+                data-testid="price-input"
+                type="number"
+                value={expectedPrice}
+                onChange={(e) => setExpectedPrice(e.target.value)}
+                placeholder="e.g. 2500"
+                className={`w-full rounded-input border ${!isPriceValid && expectedPrice ? 'border-sale text-sale focus:border-sale' : 'border-hair focus:border-ink'} bg-white px-3 py-2.5 font-sans text-[13.5px] focus:outline-none`}
+              />
+            </Field>
+          </div>
+          {!isPriceValid && (
+            <div className="text-[12px] font-medium text-sale">
+              Expected price cannot exceed the original price.
+            </div>
+          )}
 
 
           <Field label="Category">
@@ -255,7 +275,7 @@ export function ResellFlow() {
               data-testid="grade-btn"
               onClick={startGrade}
             >
-              <Camera className="h-4 w-4" /> Grade my item (₹3)
+              <Camera className="h-4 w-4" /> Grade item
             </Button>
           </div>
         </aside>
@@ -293,6 +313,7 @@ export function ResellFlow() {
     );
   }
 
+
   if (stage === "verdict" && grade) {
     const rows: ReceiptRow[] = decision
       ? [
@@ -327,7 +348,7 @@ export function ResellFlow() {
               <img
                 src={previewUrl}
                 alt={title}
-                className="h-full w-full object-contain"
+                className="absolute inset-0 h-full w-full object-contain p-4"
               />
             ) : (
               <ProductGlyph
@@ -472,7 +493,7 @@ function GradingView({ previewUrl }: { previewUrl: string | null }) {
           <img
             src={previewUrl}
             alt="Inspecting"
-            className="h-full w-full object-contain"
+            className="absolute inset-0 h-full w-full object-contain p-4"
           />
         ) : (
           <ProductGlyph kind="shoe" className="w-[55%]" />

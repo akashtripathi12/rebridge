@@ -93,6 +93,9 @@ class CreateItemRequest(BaseModel):
     expected_price: float | None = Field(
         default=None, description="User's expected selling price"
     )
+    original_price: float | None = Field(
+        default=None, description="Original retail price of the item"
+    )
 
     def to_service_request(self) -> dict[str, Any]:
         """Return the mapping passed to ``ItemService.create_item``.
@@ -115,6 +118,7 @@ class ItemMetaResponse(BaseModel):
     context_source: str
     created_at: str
     context_ref: str | None = None
+    original_price: float | None = None
     expected_price: float | None = None
 
     @classmethod
@@ -127,6 +131,7 @@ class ItemMetaResponse(BaseModel):
             context_source=meta.context_source,
             created_at=meta.created_at,
             context_ref=meta.context_ref,
+            original_price=float(meta.original_price) if meta.original_price is not None else None,
             expected_price=float(meta.expected_price) if meta.expected_price is not None else None,
         )
 

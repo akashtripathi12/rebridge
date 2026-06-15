@@ -22,7 +22,7 @@ export function ProductGlyph({
         aria-hidden
         loading="lazy"
         decoding="async"
-        className={`object-cover ${className ?? ""}`}
+        className={`object-contain ${className ?? ""}`}
       />
     );
   }

@@ -24,6 +24,7 @@ export interface CreateItemInput {
    * assigns its own id.
    */
   item_id?: string;
+  original_price?: number;
   expected_price?: number;
 }
 

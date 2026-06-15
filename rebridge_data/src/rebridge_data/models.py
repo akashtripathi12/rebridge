@@ -43,6 +43,7 @@ class ItemMeta:
     # Optional reference to the originating context. For an order-scan context
     # this carries the scanned order identifier; for a manual context it is None.
     context_ref: str | None = None
+    original_price: Decimal | None = None
     expected_price: Decimal | None = None
 
 

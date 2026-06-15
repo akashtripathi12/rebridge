@@ -343,6 +343,8 @@ class DynamoItemRepository(ItemRepository):
         # manual ones. Only persist it when set so the META facet stays clean.
         if item.context_ref is not None:
             attrs["context_ref"] = item.context_ref
+        if item.original_price is not None:
+            attrs["original_price"] = Decimal(str(item.original_price))
         if item.expected_price is not None:
             attrs["expected_price"] = Decimal(str(item.expected_price))
         return attrs
@@ -357,6 +359,7 @@ class DynamoItemRepository(ItemRepository):
             context_source=attrs["context_source"],
             created_at=attrs["created_at"],
             context_ref=attrs.get("context_ref"),
+            original_price=Decimal(str(attrs["original_price"])) if "original_price" in attrs else None,
             expected_price=Decimal(str(attrs["expected_price"])) if "expected_price" in attrs else None,
         )
 

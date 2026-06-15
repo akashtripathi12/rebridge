@@ -160,6 +160,47 @@ def test_price_estimator_empty_table_rejected():
         PriceEstimator(rows=[])
 
 
+def test_price_estimator_original_price_logic():
+    rows = [
+        {
+            "category": "widgets",
+            "grade": "Like New",
+            "age_bucket": "0-6",
+            "price_low": "45.00",
+            "price_high": "55.00",
+            "price_point": "50.00",
+        },
+        {
+            "category": "widgets",
+            "grade": "Good",
+            "age_bucket": "13-24",
+            "price_low": "15.00",
+            "price_high": "25.00",
+            "price_point": "20.00",
+        }
+    ]
+    est = PriceEstimator(rows=rows)
+    # 20 / 50 = 0.4 multiplier
+    # original_price = 100 -> tmv = 40
+    
+    # 1. No expected price -> use TMV (40)
+    band1 = est.estimate("widgets", Grade.GOOD, 15, original_price=Decimal("100.00"))
+    assert band1.point == Decimal("40.00")
+    
+    # 2. Expected price is realistic (within 15% of 40) -> 42
+    band2 = est.estimate("widgets", Grade.GOOD, 15, original_price=Decimal("100.00"), expected_price=Decimal("42.00"))
+    assert band2.point == Decimal("42.00")
+    
+    # 3. Expected price is overpriced (> 46) -> 60. Ignored, stays at TMV.
+    band3 = est.estimate("widgets", Grade.GOOD, 15, original_price=Decimal("100.00"), expected_price=Decimal("60.00"))
+    assert band3.point == Decimal("40.00")
+    assert band3.high == Decimal("46.00")
+    
+    # 4. Expected price is underpriced (< 34) -> 30. Point stays TMV.
+    band4 = est.estimate("widgets", Grade.GOOD, 15, original_price=Decimal("100.00"), expected_price=Decimal("30.00"))
+    assert band4.point == Decimal("40.00")
+
+
 # --- CostModel (Req 10.2) --------------------------------------------------
 
 

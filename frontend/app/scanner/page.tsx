@@ -67,6 +67,7 @@ function InspectionMode({ itemId }: { itemId: string }) {
     );
   }
 
+
   const graded = poll.terminal && poll.status === "GRADED";
 
   return (

@@ -281,7 +281,7 @@ export default function ReturnHandlePage() {
                           src={s.url}
                           alt={`Shot ${i + 1}`}
                           data-testid="thumb"
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         />
                         <button
                           type="button"
