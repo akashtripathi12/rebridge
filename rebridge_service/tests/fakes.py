@@ -262,6 +262,14 @@ class FakeObjectStore(ObjectStore):
         except KeyError as exc:
             raise KeyError(f"no object at key: {key}") from exc
 
+    def presign_get(self, key: str, ttl_seconds: int = 300) -> PresignedUrl:
+        return PresignedUrl(
+            url=f"https://fake-bucket.local/{key}?signed=true",
+            method="GET",
+            headers={},
+            expires_in=ttl_seconds,
+        )
+
 
 class FakeQueueClient(QueueClient):
     """In-memory grading work queue capturing enqueued messages (Req 7.1)."""

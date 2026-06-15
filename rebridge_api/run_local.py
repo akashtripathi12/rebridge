@@ -21,15 +21,15 @@ def load_dotenv():
 
 load_dotenv()
 
-from rebridge_api.wiring import build_app, build_worker, Settings
+from rebridge_api.wiring import build_app, build_worker, build_services, Settings
 from fastapi.middleware.cors import CORSMiddleware
 
 def setup_app():
     # Construct settings from environment variables populated by load_dotenv()
     settings = Settings.from_env()
 
-    # Build the FastAPI app using the live AWS data layers
-    app = build_app(settings)
+    built = build_services(settings)
+    app = build_app(settings, built)
     
     # Add CORS middleware so frontend can communicate on localhost:3000
     app.add_middleware(
@@ -90,6 +90,20 @@ def setup_app():
     # Start the worker thread
     t = threading.Thread(target=worker_loop, daemon=True)
     t.start()
+
+    # Intercept lifecycle events to feed NotificationWorker directly in local mode
+    original_publish = built.eventing._publish
+    def local_publish(event_type, item_id, payload=None):
+        event = original_publish(event_type, item_id, payload)
+        # Manually trigger the NotificationWorker with the event
+        try:
+            built.notification_worker.handle({"Records": [{"body": json.dumps(event.__dict__)}]})
+            print(f"[Worker] NotificationWorker successfully processed {event_type.value} event locally")
+        except Exception as e:
+            print(f"[Worker] NotificationWorker failed: {e}")
+        return event
+
+    built.eventing._publish = local_publish
 
     return app
 

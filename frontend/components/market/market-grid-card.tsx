@@ -49,6 +49,7 @@ export function MarketGridCard({
       <div className="relative grid aspect-[4/3] place-items-center overflow-hidden bg-black">
         <ProductGlyph
           kind={item.thumb_key}
+          fallbackCategory={item.category}
           className="w-[58%] transition-transform duration-300 group-hover:scale-105"
         />
         <span className="absolute left-3 top-3 inline-flex items-center justify-center rounded-pill bg-white/95 p-1.5 font-sans text-[10px] font-bold text-trust shadow-sm">

@@ -338,6 +338,12 @@ class ItemService:
         """Return the stable S3 object key for a given photo slot."""
         return f"items/{item_id}/photo-{slot}"
 
+    def get_photo_url(self, photo_key: str) -> str:
+        """Return a presigned GET URL for the specified photo key."""
+        if self.object_store is None:
+            raise ObjectStoreNotConfigured()
+        return self.object_store.presign_get(photo_key).url
+
     # -- listing CRUD ------------------------------------------------------
     def create_listing(
         self,

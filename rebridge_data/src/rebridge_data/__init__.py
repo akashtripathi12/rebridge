@@ -18,6 +18,7 @@ from rebridge_data.interfaces import (
     ObjectStore,
     QueueClient,
     ReviewQueueRepository,
+    NotificationRepository,
     ConditionCheckFailed,
 )
 from rebridge_data.kms_card_signer import KmsCardSigner
@@ -36,6 +37,7 @@ from rebridge_data.models import (
     LifecycleEvent,
     ListingPatch,
     ListingRecord,
+    NotificationRecord,
     PresignedUrl,
     RawModelResponse,
     ReviewQueueEntry,
@@ -49,6 +51,7 @@ __all__ = [
     # concrete implementations
     "DynamoItemRepository",
     "ReviewQueueRepository",
+    "NotificationRepository",
     "ObjectStore",
     "QueueClient",
     "CardSigner",
@@ -68,6 +71,7 @@ __all__ = [
     "DecisionRecord",
     "ListingRecord",
     "ListingPatch",
+    "NotificationRecord",
     "ReviewQueueEntry",
     "PresignedUrl",
     "GradingMessage",
@@ -129,3 +133,9 @@ from rebridge_data.eventbridge_demand_gateways import (  # noqa: E402
 
 __all__.append("EventBridgeBuyerNotifier")
 __all__.append("EventBridgeSecondChanceShelf")
+
+from rebridge_data.dynamo_notification_repository import (  # noqa: E402
+    DynamoDbNotificationRepository,
+)
+
+__all__.append("DynamoDbNotificationRepository")

@@ -47,6 +47,7 @@ if TYPE_CHECKING:  # pragma: no cover - typing only, avoids import cost at runti
     from rebridge_service.eventing_service import EventingService
     from rebridge_service.health_card_service import HealthCardService
     from rebridge_service.item_service import ItemService
+    from rebridge_service.notification_service import NotificationService
     from rebridge_service.review_console_service import ReviewConsoleService
     from rebridge_service.routing_agent import RoutingAgent
 
@@ -116,6 +117,7 @@ class Services:
     card_service: "HealthCardService | None" = None
     matching: "DemandMatchingEngine | None" = None
     review: "ReviewConsoleService | None" = None
+    notification_service: "NotificationService | None" = None
 
 
 def set_services(app, services: Services) -> None:

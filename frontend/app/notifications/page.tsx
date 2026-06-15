@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { notifs, useNotifs, type Notif } from "@/lib/notifications";
+import { useNotifs, useNotifsMutation, type Notif } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { Bell, Check, Gift, Sprout, Truck } from "lucide-react";
 
@@ -36,16 +36,18 @@ export default function NotificationsPage() {
   const unread = useMemo(() => all.filter((n) => n.unread).length, [all]);
   const shown = filter === "unread" ? all.filter((n) => n.unread) : all;
 
+  const { markRead, markAllRead } = useNotifsMutation();
+
   // Mark each visible notification as read after a brief delay (typical inbox UX).
   useEffect(() => {
     const t = setTimeout(() => {
       shown.forEach((n) => {
-        if (n.unread) notifs.markRead(n.id);
+        if (n.unread) markRead(n.id);
       });
     }, 1200);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [shown, markRead]);
 
   return (
     <main className="bg-canvas px-4 py-10 sm:px-6">
@@ -87,7 +89,7 @@ export default function NotificationsPage() {
                 variant="ghost"
                 size="sm"
                 data-testid="mark-read"
-                onClick={() => notifs.markAllRead()}
+                onClick={() => markAllRead()}
               >
                 <Check className="h-3.5 w-3.5" /> Mark all read
               </Button>
@@ -122,7 +124,7 @@ export default function NotificationsPage() {
                     "flex gap-3 px-5 py-4 transition-colors hover:bg-paper",
                     n.unread && "bg-paper/60",
                   )}
-                  onClick={() => notifs.markRead(n.id)}
+                  onClick={() => markRead(n.id)}
                 >
                   <div
                     className={cn(

@@ -95,6 +95,7 @@ class EventType(Enum):
     LISTED = "LISTED"
     MATCHED = "MATCHED"
     SOLD = "SOLD"
+    SELLER_NOTIFIED = "SELLER_NOTIFIED"
 
 
 @dataclass

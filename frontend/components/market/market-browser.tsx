@@ -25,9 +25,11 @@ export function MarketBrowser() {
   const [category, setCategory] = useState(MARKET_CATEGORIES[0].id);
   const [sort, setSort] = useState<SortKey>("recommended");
 
+  const apiCategory = category === "for_you" ? "all" : category;
+
   const market = useQuery({
-    queryKey: ["marketplace", category],
-    queryFn: () => marketplaceService.list(category),
+    queryKey: ["marketplace", apiCategory],
+    queryFn: () => marketplaceService.list(apiCategory),
   });
 
   const inv = useInventory();
@@ -47,9 +49,7 @@ export function MarketBrowser() {
   );
 
   const allScored = useMemo(() => {
-    const base = (market.data?.listings ?? []).filter(
-      (l) => !myListedIds.has(l.item_id),
-    );
+    const base = market.data?.listings ?? [];
     return scoreForBuyer(base, buyerProfile);
   }, [market.data, myListedIds, buyerProfile]);
 
@@ -85,10 +85,10 @@ export function MarketBrowser() {
     return arr;
   }, [allScored, sort]);
 
-  // Always show recommendation sections so filters correctly apply to carousels too
-  const showRecoSections = true;
+  // Hide recommendation sections explicitly when viewing the raw "All" category
+  const showRecoSections = category !== "all";
   const activeCategory = MARKET_CATEGORIES.find((c) => c.id === category);
-  const catContext = category === "all" ? "" : ` in ${activeCategory?.label}`;
+  const catContext = (category === "all" || category === "for_you") ? "" : ` in ${activeCategory?.label}`;
 
   return (
     <main className="bg-canvas px-4 py-10 sm:px-6">

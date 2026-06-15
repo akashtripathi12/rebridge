@@ -65,10 +65,15 @@ def create_listing(
     # and a MATCHED event is emitted (Requirements 13.5, 15.4). Skipped cleanly
     # if no matching engine is wired into the container.
     if services.matching is not None:
-        services.matching.match(
+        match_result = services.matching.match(
             item_id=body.item_id,
             geo=listing.geohash5,
             category=listing.category,
+        )
+        services.eventing.emit_seller_notified(
+            item_id=body.item_id,
+            seller_id=_user.subject,
+            message={"match_count": len(match_result.notified)}
         )
 
     return ListingResponse.from_record(listing)

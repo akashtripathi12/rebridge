@@ -190,7 +190,11 @@ class HealthCardService:
             resolved_card_id, item_id, grade, resolved_graded_at
         )
         signature = self.signer.sign(payload)
-        qr_target = self._qr_target(resolved_card_id, signature)
+        item_record = self.item_repo.get_item(item_id)
+        if item_record and item_record.meta.context_source == "order_scan":
+            qr_target = ""
+        else:
+            qr_target = self._qr_target(resolved_card_id, signature)
 
         record = CardRecord(
             card_id=resolved_card_id,

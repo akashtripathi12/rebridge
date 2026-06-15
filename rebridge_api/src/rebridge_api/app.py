@@ -25,7 +25,7 @@ from fastapi import APIRouter, FastAPI
 
 from rebridge_api.dependencies import Services, set_services
 from rebridge_api.errors import register_exception_handlers
-from rebridge_api.routers import cards, items, listings, marketplace, matches, review
+from rebridge_api.routers import cards, items, listings, marketplace, matches, notifications, review
 
 __all__ = ["create_app"]
 
@@ -70,6 +70,7 @@ def create_app(
     # Demand matches (G1) and review queue (G2) routes.
     app.include_router(matches.router)
     app.include_router(review.router)
+    app.include_router(notifications.router)
     # Public, unauthenticated Health Card verification route (task 17.4); always
     # served so the QR target /cards/{card_id}/verify resolves (Req 12.4, 16.3).
     app.include_router(cards.router)

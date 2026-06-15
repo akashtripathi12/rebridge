@@ -27,6 +27,7 @@ from rebridge_service.demand_matching_engine import (
     MatchWeights,
     ScoredCandidate,
 )
+from rebridge_service.eventing_service import EventingService
 from rebridge_service.health_card_service import (
     CANONICAL_SEPARATOR,
     CardNotFound,
@@ -37,12 +38,16 @@ from rebridge_service.health_card_service import (
     canonical_card_payload,
 )
 from rebridge_service.item_service import (
+
     InvalidField,
     ItemNotFound,
     ItemService,
     ItemServiceError,
     MissingField,
 )
+from rebridge_service.notification_service import NotificationService
+from rebridge_service.notification_worker import NotificationWorker
+from rebridge_service.review_console_service import ReviewConsoleService
 from rebridge_service.routing_tools import (
     AGE_BUCKETS,
     DEFAULT_CATEGORY,
@@ -121,6 +126,8 @@ __all__: list[str] = [
     "AGE_BUCKETS",
     "DEFAULT_CATEGORY",
     "DemandMatchingEngine",
+    "NotificationService",
+    "NotificationWorker",
     "MatchWeights",
     "ScoredCandidate",
     "FAVORED_PERSONA_TYPES",

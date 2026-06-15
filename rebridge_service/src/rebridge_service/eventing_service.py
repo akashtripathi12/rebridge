@@ -102,6 +102,12 @@ class EventingService:
         """Emit a SOLD event for ``item_id`` (Requirement 15.5)."""
         return self._publish(EventType.SOLD, item_id)
 
+    def emit_seller_notified(self, item_id: str, seller_id: str, message: dict) -> LifecycleEvent:
+        """Emit a SELLER_NOTIFIED event."""
+        payload = message.copy()
+        payload["seller_id"] = seller_id
+        return self._publish(EventType.SELLER_NOTIFIED, item_id, payload=payload)
+
     # -- helpers -----------------------------------------------------------
     def _publish(
         self,
