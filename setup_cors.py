@@ -10,7 +10,10 @@ cors_configuration = {
     'CORSRules': [{
         'AllowedHeaders': ['*'],
         'AllowedMethods': ['PUT', 'POST', 'GET', 'HEAD'],
-        'AllowedOrigins': ['http://localhost:3000'],
+        'AllowedOrigins': [
+            'http://localhost:3000',
+            'https://rebridge-beta.vercel.app'
+        ],
         'ExposeHeaders': ['ETag']
     }]
 }

@@ -263,6 +263,16 @@ def evaluate_routing(ctx: RoutingContext) -> RoutingDecision:
     that math (Requirement 10.7).
     """
 
+    if ctx.price_band.grade == Grade.UNSELLABLE.value and ctx.price_band.category == "electronics":
+        return RoutingDecision(
+            disposition=Disposition.RECYCLE,
+            price=Decimal("0"),
+            value=Decimal("0"),
+            cost=Decimal("0"),
+            margin=Decimal("0"),
+            rationale="RECYCLE selected: Unsellable electronics must be recycled."
+        )
+
     chosen = select_disposition(ctx.path_values, ctx.path_costs)
     value = _money(ctx.path_values[chosen])
     cost = _money(ctx.path_costs[chosen])

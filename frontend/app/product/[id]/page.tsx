@@ -19,6 +19,7 @@ export default function ProductDetailPage() {
   const id = params.id;
   const [reserved, setReserved] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showToast, setShowToast] = useState(false);
 
   const card = useQuery({
     queryKey: ["health-card", id],
@@ -57,6 +58,8 @@ export default function ProductDetailPage() {
     });
 
     setReserved(true);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
   };
 
   const pickupSlot = useMemo(() => "Tomorrow · 10:00–12:00", []);
@@ -229,6 +232,13 @@ export default function ProductDetailPage() {
           </aside>
         </div>
       </div>
+      
+      {showToast && (
+        <div className="fixed bottom-4 right-4 z-50 flex animate-in slide-in-from-bottom-5 items-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg fade-in duration-300">
+          <Check className="h-4 w-4" />
+          +12 Green Credits earned
+        </div>
+      )}
     </main>
   );
 }

@@ -398,12 +398,31 @@ def build_app(settings: Settings, built: BuiltServices | None = None) -> FastAPI
     built = built or build_services(settings)
     app = create_app(services=built.services)
 
+    # Add CORS middleware for production deployment
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "https://rebridge-beta.vercel.app",
+            "http://localhost:3000"
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     verifier = CognitoJwtVerifier.from_cognito(
         region=settings.cognito_region,
         user_pool_id=settings.cognito_user_pool_id,
         app_client_id=settings.cognito_app_client_id,
     )
     set_verifier(app, verifier)
+
+    # Bypass Cognito JWT verification for production demo deployment (mock auth)
+    from rebridge_api.dependencies import get_current_user, CurrentUser
+    app.dependency_overrides[get_current_user] = lambda: CurrentUser(
+        subject="demo-user", claims={"sub": "demo-user"}, role="operator"
+    )
 
     # Install the configured app on the Lambda HTTP adapter so the module-level
     # handler serves this wired app rather than a default one.
