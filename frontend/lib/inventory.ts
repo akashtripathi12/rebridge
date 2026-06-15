@@ -24,6 +24,7 @@ export interface MyListing {
   health_card_id: string;
   status: "LISTED" | "RESERVED" | "SOLD";
   listed_at: string;
+  green_credits?: number;
 }
 
 export interface MyPurchase {

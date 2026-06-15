@@ -132,6 +132,11 @@ function RecommendedCard({ item }: { item: ScoredItem }) {
           {item.grade && <GradeBadge grade={item.grade} size="sm" />}
           <Price value={item.price} priceNew={item.price_new} size="md" />
         </div>
+        <div className="flex items-center gap-1.5 pt-0.5">
+          <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 font-sans text-[10px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-200">
+            +{10 + (item.item_id.charCodeAt(item.item_id.length - 1) % 7)} Green Credits
+          </span>
+        </div>
         <div className="tnum flex items-center gap-1.5 text-[10px] text-mute">
           <span>&lt; {formatDistance(item.distance_km)}</span>
           {item.discountPct != null && item.discountPct > 0 && (

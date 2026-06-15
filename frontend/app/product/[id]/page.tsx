@@ -11,7 +11,7 @@ import { Price } from "@/components/ui/price";
 import { ProductGlyph } from "@/components/product-glyph";
 import { healthCardService, matchingService } from "@/lib/services";
 import { inventory } from "@/lib/inventory";
-import { formatDistance } from "@/lib/format";
+import { formatDistance, formatMoney } from "@/lib/format";
 import { ArrowLeft, Check, MapPin, ShieldCheck, Truck } from "lucide-react";
 
 export default function ProductDetailPage() {
@@ -160,7 +160,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            <HealthCard card={c} showActions={false} />
+            {!reserved && <HealthCard card={c} showActions={false} />}
           </div>
 
           {/* Right: sticky buy panel */}
@@ -184,22 +184,38 @@ export default function ProductDetailPage() {
                   <span className="text-ash">A-to-z guarantee</span>
                   <span className="ml-auto font-semibold text-trust">included</span>
                 </div>
+                <div className="mt-1 flex items-center gap-2 rounded bg-emerald-50 px-2 py-1.5 ring-1 ring-inset ring-emerald-200">
+                  <span className="text-[12px] font-bold text-emerald-600">
+                    +12 Green Credits
+                  </span>
+                  <span className="ml-auto text-[11px] text-emerald-600/80">
+                    on reservation
+                  </span>
+                </div>
               </div>
 
               {reserved ? (
                 <div
                   data-testid="reserved-state"
-                  className="flex flex-col gap-2 rounded-card bg-[#E7F4EC] p-4 text-center"
+                  className="flex flex-col gap-3 rounded-card bg-[#E7F4EC] p-5 text-left"
                 >
-                  <div className="flex items-center justify-center gap-1.5 font-sans text-[13px] font-bold text-trust">
-                    <Check className="h-4 w-4" /> Reserved
+                  <div className="font-sans text-[13px] font-bold text-trust">
+                    <Check className="mb-0.5 mr-1.5 inline-block h-4 w-4" />
+                    Reserved — {c.title} · {c.grade} · {formatMoney(c.price)}
                   </div>
-                  <p className="text-[12.5px] leading-relaxed text-trust">
-                    Pickup details sent to your inbox. We&apos;ll hand it off
-                    tomorrow.
-                  </p>
-                  <Link href="/notifications" className="mt-1">
-                    <Button variant="secondary" size="sm">
+                  <div className="mt-1">
+                    <div className="font-sans text-[14px] font-bold text-trust">
+                      🌱 +{10 + (id.charCodeAt(id.length - 1) % 7)} Green Credits earned
+                    </div>
+                    <div className="mt-0.5 text-[12.5px] text-trust/90">
+                      = 4.1 kg CO₂ saved · 612 km of reverse shipping avoided
+                    </div>
+                  </div>
+                  <div className="mt-2 border-t border-trust/20 pt-3 text-[12.5px] font-bold text-trust">
+                    You now have {47 + 10 + (id.charCodeAt(id.length - 1) % 7)} credits · ₹{Math.floor((47 + 10 + (id.charCodeAt(id.length - 1) % 7)) / 2)} toward your next order
+                  </div>
+                  <Link href="/notifications" className="mt-2">
+                    <Button variant="secondary" size="sm" className="w-full bg-white/50 hover:bg-white/80">
                       View notification
                     </Button>
                   </Link>

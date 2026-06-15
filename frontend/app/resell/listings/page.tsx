@@ -64,7 +64,9 @@ export default function MyListingsPage() {
               data-testid="listings-grid"
               className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
             >
-              {listings.map((l) => (
+              {listings.map((l) => {
+                const credits = l.green_credits || (10 + (l.item_id.charCodeAt(l.item_id.length - 1) % 7));
+                return (
                 <Link
                   key={l.item_id}
                   href={`/product/${l.item_id}`}
@@ -90,13 +92,16 @@ export default function MyListingsPage() {
                       >
                         {l.status}
                       </span>
-                      <span className="tnum text-[11px] text-mute">
+                      <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 font-sans text-[10px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-200">
+                        +{credits} Green Credits
+                      </span>
+                      <span className="tnum ml-auto text-[11px] text-mute">
                         {new Date(l.listed_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
                 </Link>
-              ))}
+              )})}
             </div>
           )}
         </section>
@@ -107,29 +112,34 @@ export default function MyListingsPage() {
               You&apos;ve reserved ({purchases.length})
             </h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {purchases.map((p) => (
+              {purchases.map((p) => {
+                const credits = 10 + (p.item_id.charCodeAt(p.item_id.length - 1) % 7);
+                return (
                 <Link
                   key={p.item_id}
                   href={`/product/${p.item_id}`}
-                  className="flex gap-4 rounded-card border border-hair bg-pearl p-4 shadow-sm transition-transform hover:-translate-y-0.5"
+                  className="flex gap-4 rounded-card border border-transparent bg-[#E7F4EC] p-4 shadow-sm transition-transform hover:-translate-y-0.5"
                 >
-                  <div className="grid h-20 w-20 flex-none place-items-center rounded-card bg-[radial-gradient(140%_120%_at_30%_8%,#2a2a2e,#161618_60%,#0e0e10)]">
-                    <ProductGlyph kind={p.thumb_key} className="w-[70%]" />
-                  </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate font-sans text-[13.5px] font-bold">
-                      {p.title}
+                    <div className="font-sans text-[13.5px] font-bold text-trust">
+                      Reserved — {p.title} · {p.grade} · <Price value={p.price} size="sm" className="inline text-trust" />
                     </div>
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <GradeBadge grade={p.grade} size="sm" />
-                      <Price value={p.price} size="sm" />
+                    
+                    <div className="mt-3">
+                      <div className="font-sans text-[14px] font-bold text-trust">
+                        🌱 +{credits} Green Credits earned
+                      </div>
+                      <div className="mt-0.5 text-[12px] text-trust/90">
+                        = 4.1 kg CO₂ saved · 612 km of reverse shipping avoided
+                      </div>
                     </div>
-                    <div className="mt-2 text-[11px] text-mute">
-                      Pickup · <span className="tnum">{p.pickup_at}</span>
+                    
+                    <div className="mt-3 border-t border-trust/20 pt-2 text-[12px] font-bold text-trust">
+                      You now have {47 + credits} credits · ₹{Math.floor((47 + credits) / 2)} toward your next order
                     </div>
                   </div>
                 </Link>
-              ))}
+              )})}
             </div>
           </section>
         )}

@@ -149,6 +149,7 @@ export function ResellFlow() {
       health_card_id: poll.data?.card?.card_id ?? `card_${itemId.slice(0, 6)}`,
       status: "LISTED",
       listed_at: new Date().toISOString(),
+      green_credits: Math.floor(Math.random() * 7) + 10,
     });
     const matchCount = matches.data?.match_count_within_5km ?? 0;
     
